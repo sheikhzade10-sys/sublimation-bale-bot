@@ -1,0 +1,37 @@
+name: 24/7 Sublimation Leads Cron to Bale
+
+on:
+  schedule:
+    # Runs every 2 hours UTC 24/7/365 completely independent of your computer
+    - cron: '0 */2 * * *'
+  workflow_dispatch: # Allows manual trigger from GitHub UI anytime
+
+jobs:
+  run-sublimation-bale:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm ci || npm install
+
+      - name: Run Sublimation Discovery & Bale Delivery
+        env:
+          BALE_BOT_TOKEN: '2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8'
+          BALE_CHAT_ID: '4657775638'
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: node standalone-worker.mjs --once
+
+      - name: Commit updated leads database
+        run: |
+          git config --global user.name "Sublimation Bot"
+          git config --global user.email "bot@sublimation.ir"
+          git add work/ outputs/ || true
+          git commit -m "Auto-delivered new sublimation leads to Bale [skip ci]" || echo "No changes to commit"
+          git push || true

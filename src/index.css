@@ -1,0 +1,32 @@
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Vazirmatn", Tahoma, system-ui, -apple-system, sans-serif;
+  --font-mono: "JetBrains Mono", Consolas, ui-monospace, monospace;
+}
+
+@layer base {
+  html,
+  body,
+  #root {
+    direction: rtl;
+    text-align: right;
+    font-family: var(--font-sans);
+  }
+}
+
+.rtl-text {
+  direction: rtl;
+  text-align: right;
+  unicode-bidi: embed;
+}
+
+.ltr-code {
+  direction: ltr !important;
+  text-align: left !important;
+  unicode-bidi: isolate !important;
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+  display: block;
+  width: 100%;
+}

@@ -1,0 +1,26 @@
+[
+  {
+    "cycleId": "CYCLE-0001",
+    "timestamp": "1405/08/10 - 19:30:00",
+    "isoTimestamp": "2026-11-01T16:00:00.000Z",
+    "targetCity": "تهران، اصفهان، مشهد، شیراز، یزد، کرج",
+    "sourcesChecked": [
+      "subliran.com",
+      "seasonprinting.com",
+      "shahriarisho.ir",
+      "iranprintmart.ir",
+      "chapshoo.com",
+      "subtexprint.com",
+      "chapita.ir",
+      "chapshahreraz.com",
+      "novintalk.com (منبع معرفی)",
+      "fararang.com (منبع معرفی - حذف fararangco غیرمرتبط)",
+      "fabtalkco.com (منبع معرفی)"
+    ],
+    "newLeadsAdded": 10,
+    "newProspectsAdded": 5,
+    "newSourcesAdded": 5,
+    "limitations": "ورود تلگرام نیازمند نشست فعال نبود؛ صرفاً از منابع عمومی وب، دایرکتوری‌های صنعتی و سایت‌های رسمی کارگاه‌ها استفاده شد. شناسه fararangco در اینستاگرام غرفه‌ساز نمایشگاهی تشخیص داده شد و کنار گذاشته شد.",
+    "nextStep": "پایش چرخشی دور بعدی برای شهرهای کاشان، تبریز، قم و مازندران (آگهی‌های استخدام اپراتور کلندر و کارگاه‌های چاپ طاقه)"
+  }
+]
