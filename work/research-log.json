@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0012",
+    "timestamp": "2026-11-03T11:33:41.280Z",
+    "isoTimestamp": "2026-11-03T11:33:41.280Z",
+    "targetCity": "یزد، شهرک صنعتی یزد، فاز ۲ و تهران، عبدل‌آباد، خیابان احسانی",
+    "sourcesChecked": [
+      "https://iran-tejarat.com",
+      "https://iranprintmart.ir"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش خودکار ابری ۲۴ ساعته دیوار و دایرکتوری‌های صنعتی چاپ و کلندر پارچه ایران",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0011",
     "timestamp": "2026-11-03T11:33:10.518Z",
     "isoTimestamp": "2026-11-03T11:33:10.518Z",
