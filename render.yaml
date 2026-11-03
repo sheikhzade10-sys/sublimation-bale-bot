@@ -1,0 +1,12 @@
+services:
+  - type: worker
+    name: sublimation-bale-bot
+    env: node
+    plan: free
+    buildCommand: npm install
+    startCommand: node standalone-worker.mjs
+    envVars:
+      - key: BALE_BOT_TOKEN
+        value: 2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8
+      - key: BALE_CHAT_ID
+        value: '4657775638'

@@ -105,6 +105,7 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(7200);
+  const [showCloudGuide, setShowCloudGuide] = useState<boolean>(false);
 
   // Divar 1-time login state
   const [divarPhoneInput, setDivarPhoneInput] = useState<string>(
@@ -311,6 +312,43 @@ export default function App() {
                 : `جست‌وجوی خودکار هر ۲ ساعت (نوبت بعد: ${formatDuration(secondsLeft)})`}
             </button>
 
+            <button
+              type="button"
+              onClick={() => setShowCloudGuide(!showCloudGuide)}
+              style={{
+                background: showCloudGuide ? '#0a58ca' : '#0d6efd',
+                color: 'white',
+                border: 0,
+                borderRadius: '8px',
+                padding: '10px 14px',
+                cursor: 'pointer',
+                font: 'inherit',
+                fontSize: '14px',
+                fontWeight: 'bold',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '6px',
+              }}
+            >
+              ☁️ اتوماسیون ۲۴ ساعته ابری (مستقل از سیستم)
+            </button>
+
+            <a
+              href="/api/download/cloud-package"
+              style={{
+                background: '#e8f4fd',
+                color: '#0d6efd',
+                border: '1px solid #b6d4fe',
+                borderRadius: '8px',
+                padding: '10px 14px',
+                textDecoration: 'none',
+                fontSize: '14px',
+                fontWeight: 'bold',
+              }}
+            >
+              📦 دانلود پکیج دائم‌کار ربات
+            </a>
+
             <a
               href="/api/download/xlsx"
               style={{
@@ -327,6 +365,56 @@ export default function App() {
             </a>
           </div>
         </div>
+
+        {showCloudGuide && (
+          <div
+            style={{
+              background: '#f0f7ff',
+              border: '2px solid #0d6efd',
+              borderRadius: '12px',
+              padding: '18px 20px',
+              margin: '14px 0',
+              fontSize: '14px',
+              lineHeight: '1.9',
+            }}
+          >
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+              <h2 style={{ fontSize: '17px', fontWeight: 'bold', color: '#0a58ca', margin: 0 }}>
+                🚀 راهنمای اجرای ۲۴ ساعته در فضای ابری (بدون نیاز به روشن بودن لپ‌تاپ یا باز بودن مرورگر)
+              </h2>
+              <button
+                type="button"
+                onClick={() => setShowCloudGuide(false)}
+                style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '18px', color: '#666' }}
+              >
+                ✕
+              </button>
+            </div>
+
+            <p style={{ margin: '6px 0 12px 0', color: '#333' }}>
+              برای اینکه ربات سابلیمیشن حتی وقتی لپ‌تاپ شما خاموش است یا به اینترنت دسترسی ندارید، <strong>به صورت دائم و شبانه‌روزی رأس هر ۲ ساعت کار کند و کارت‌های جدید را به گروه بله بفرستد</strong>، ۲ راهکار آماده پیش روی شماست:
+            </p>
+
+            <div style={{ background: 'white', padding: '12px 14px', borderRadius: '8px', marginBottom: '10px', border: '1px solid #cfe2ff' }}>
+              <strong style={{ color: '#0a58ca' }}>روش ۱ (پیشنهادی و کاملاً رایگان با گیت‌هاب اکشن):</strong>
+              <div style={{ marginTop: '4px' }}>
+                فایل گردش کار ابری پروژه در مسیر <code>.github/workflows/sublimation_bale_cron.yml</code> آماده شده است. تنها کافیست این پروژه را به یک مخزن رایگان گیت‌هاب (GitHub) پوش کنید.
+                سرورهای ابری گیت‌هاب به صورت خودکار و ۱۰۰٪ رایگان هر ۲ ساعت یک‌بار بیدار می‌شوند، مشتریان جدید را کشف کرده و به گروه بله می‌فرستند.
+              </div>
+            </div>
+
+            <div style={{ background: 'white', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cfe2ff' }}>
+              <strong style={{ color: '#0a58ca' }}>روش ۲ (اجرا روی هر سرور مجازی VPS، رندر یا کامپیوتر دلخواه):</strong>
+              <div style={{ marginTop: '4px' }}>
+                روی دکمهٔ <strong>«دانلود پکیج دائم‌کار ربات»</strong> در بالای صفحه کلیک کنید و در سرور یا کامپیوتر خود فقط دستور زیر را اجرا کنید:
+                <pre style={{ direction: 'ltr', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px', margin: '6px 0', fontSize: '13px' }}>
+                  node standalone-worker.mjs
+                </pre>
+                این اسکریپت به صورت ۲۴ ساعته در پس‌زمینه اجرا می‌شود و نیازی به باز بودن این مرورگر یا گوگل استودیو ندارد.
+              </div>
+            </div>
+          </div>
+        )}
 
         {/* پنل وضعیت دائمی و تمام‌خودکار بله + پایش دیوار، تلگرام، اینستاگرام، لینکدین و مشتریان رکورد بدون نیاز به کد پیامکی */}
         <div

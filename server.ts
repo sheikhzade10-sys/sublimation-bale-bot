@@ -1761,6 +1761,20 @@ async function startServer() {
     res.sendFile(filePath);
   });
 
+  app.get('/api/download/cloud-package', (_req, res) => {
+    const filePath = path.join(OUTPUTS_DIR, 'sublimation-bot-standalone.tar.gz');
+    if (!fs.existsSync(filePath)) {
+      res.status(404).send('Package archive not found');
+      return;
+    }
+    res.setHeader('Content-Type', 'application/gzip');
+    res.setHeader(
+      'Content-Disposition',
+      'attachment; filename="sublimation-bot-standalone.tar.gz"'
+    );
+    res.sendFile(filePath);
+  });
+
   if (process.env.NODE_ENV !== 'production') {
     const vite = await createViteServer({
       server: { middlewareMode: true },
