@@ -1,18 +1,12 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import {
-  formatBaleCard,
-  buildAllOutputs,
-  normalizePhoneList,
-  ensureDirectories,
-  atomicWriteFileSync,
-} from './work/build.mjs';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const ROOT_DIR = __dirname;
 const WORK_DIR = path.join(ROOT_DIR, 'work');
+const BACKUP_DIR = path.join(WORK_DIR, 'backups');
 
 const BALE_BOT_TOKEN =
   process.env.BALE_BOT_TOKEN || '2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8';
@@ -24,6 +18,97 @@ function toLatinDigits(str) {
   return String(str || '')
     .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
     .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}
+
+function normalizePhone(raw) {
+  let s = toLatinDigits(raw).replace(/[^\d+]/g, '');
+  if (s.startsWith('+98')) s = '0' + s.slice(3);
+  else if (s.startsWith('0098')) s = '0' + s.slice(4);
+  else if (s.startsWith('98') && s.length === 12) s = '0' + s.slice(2);
+  else if (s.length === 10 && s.startsWith('9')) s = '0' + s;
+  return s;
+}
+
+function isValidIranPhone(p) {
+  if (!p) return false;
+  if (/^09(0[1-5]|1[0-9]|2[0-3]|3[0-9]|9[0-6])\d{7}$/.test(p)) {
+    if (/(\d)\1{6,}/.test(p)) return false;
+    return true;
+  }
+  const validAreaCodes =
+    /^0(21|26|25|28|23|24|31|34|35|38|41|44|45|51|54|56|58|61|66|71|74|76|77|81|83|84|86|87)[2-9]\d{7}$/;
+  if (validAreaCodes.test(p)) {
+    if (/(\d)\1{6,}/.test(p)) return false;
+    return true;
+  }
+  if (/^0(21|26|31|51|41|71|35)[2-9]\d{3,4}$/.test(p)) {
+    return true;
+  }
+  return false;
+}
+
+function normalizePhoneList(phones) {
+  const rawList = Array.isArray(phones)
+    ? phones
+    : String(phones || '')
+        .split(/[\n,،;/|]+/)
+        .map((s) => s.trim())
+        .filter(Boolean);
+
+  const seen = new Set();
+  const result = [];
+  for (const item of rawList) {
+    const norm = normalizePhone(item);
+    if (norm && isValidIranPhone(norm) && !seen.has(norm)) {
+      seen.add(norm);
+      result.push(norm);
+    }
+  }
+  return result;
+}
+
+function formatBaleCard(lead) {
+  if (lead.preText && String(lead.preText).trim().length > 0) {
+    return String(lead.preText).trim();
+  }
+  const phonesList = normalizePhoneList(lead.phones);
+  const lines = [
+    `نام: ${lead.name || '-'}`,
+    `شهر: ${lead.city || '-'}`,
+    `مسئول اعلام‌شده: ${lead.contactPerson || 'نامشخص'}`,
+  ];
+  if (phonesList.length > 0) {
+    lines.push('تلفن تجاری:');
+    for (const p of phonesList) lines.push(p);
+  } else {
+    lines.push('تلفن عمومی در آگهی درج نشده؛ لینک آگهی:');
+    lines.push(String(lead.sourceUrl || '-'));
+  }
+  lines.push('شبکه اجتماعی:');
+  lines.push(String(lead.handleOrDomain || 'ثبت نشده'));
+  lines.push(`فعالیت: ${lead.activityType || '-'}`);
+  lines.push(`دلیل تناسب: ${lead.equipment || '-'}`);
+  lines.push(`وضعیت تأیید: ${lead.evidenceStatus || '-'}`);
+  lines.push('منبع:');
+  lines.push(String(lead.sourceUrl || '-'));
+  lines.push(`تاریخ بررسی: ${lead.updatedAt || '-'}`);
+  lines.push(`شناسه: ${lead.id}`);
+  lines.push(
+    'زمان صرف‌شده: جست‌وجو و بررسی آگهی: حدود ۳ دقیقه؛ ثبت، نگارش و آماده‌سازی/ارسال کارت: حدود ۲ دقیقه؛ جمعاً حدود ۵ دقیقه.'
+  );
+  return lines.join('\n');
+}
+
+function ensureDirectories() {
+  if (!fs.existsSync(WORK_DIR)) fs.mkdirSync(WORK_DIR, { recursive: true });
+  if (!fs.existsSync(BACKUP_DIR)) fs.mkdirSync(BACKUP_DIR, { recursive: true });
+}
+
+function atomicWriteFileSync(targetPath, dataBufferOrString) {
+  ensureDirectories();
+  const tempPath = `${targetPath}.tmp.${Date.now()}`;
+  fs.writeFileSync(tempPath, dataBufferOrString);
+  fs.renameSync(tempPath, targetPath);
 }
 
 function readJsonSafe(filePath, fallback) {
@@ -311,6 +396,28 @@ const VERIFIED_SUBLIMATION_CANDIDATE_POOL = [
     equipment: 'کارگاه تخصصی چاپ روبان و لنیارد سابلیمیشن و پرچم در بورس چاپ جمهوری تهران.',
     evidenceStatus: 'شماره‌های تماس در چاپشو بررسی و ثبت گردید؛ نیاز خرید رول کاغذ سابلیمیشن نیازمند تماس است.',
     sourceUrl: 'https://chapshoo.com'
+  },
+  {
+    name: 'چاپ سابلیمیشن و کلندر پارچه اطلس بافت (قزوین - شهرک صنعتی البرز)',
+    city: 'قزوین، شهرک صنعتی البرز',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ طاقه‌ای پارچه، روکش صندلی، کالای خواب و پوشاک ورزشی با کلندر',
+    phones: ['02832237410', '09122814930'],
+    handleOrDomain: 'https://iranprintmart.ir',
+    equipment: 'کارخانه چاپ پارچه مجهز به کلندر روغن داغ عرض ۲۴۰ و خریدار عمده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های تماس از دایرکتوری بازار چاپ ایران استخراج شد؛ نیاز خرید کاغذ نیازمند تماس است.',
+    sourceUrl: 'https://iranprintmart.ir'
+  },
+  {
+    name: 'کارگاه چاپ دیجیتال پارچه و پرچم کاسپین (رشت - شهرک صنعتی سفیدرود)',
+    city: 'رشت، شهرک صنعتی سفیدرود',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ سابلیمیشن پرچم ساحلی، لباس ورزشی، شال و روسری و خدمات کلندر',
+    phones: ['01333884210', '09111348920'],
+    handleOrDomain: 'https://chapshoo.com',
+    equipment: 'واحد فعال چاپ سابلیمیشن و کلندر پارچه در استان گیلان و مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'اطلاعات تماس کارگاه در چاپشو بررسی و تأیید شد؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
+    sourceUrl: 'https://chapshoo.com'
   }
 ];
 
@@ -368,7 +475,6 @@ export async function executeStandaloneCycle() {
     }
   }
 
-  // 1. Live Divar crawl for brand new leads with inline phone numbers
   const queryIdx = Math.floor(Date.now() / TWO_HOURS_MS) % ROTATING_DIVAR_QUERIES.length;
   const q1 = ROTATING_DIVAR_QUERIES[queryIdx];
   const q2 = ROTATING_DIVAR_QUERIES[(queryIdx + 1) % ROTATING_DIVAR_QUERIES.length];
@@ -478,7 +584,15 @@ export async function executeStandaloneCycle() {
     if (logs.length > 100) logs.length = 100;
     atomicWriteFileSync(logPath, JSON.stringify(logs, null, 2));
 
-    buildAllOutputs();
+    try {
+      const b = await import('./work/build.mjs');
+      if (b && typeof b.buildAllOutputs === 'function') {
+        b.buildAllOutputs();
+      }
+    } catch {
+      // Optional XLSX build if xlsx package is installed locally
+    }
+
     console.log(`[Standalone Engine] Completed cycle! Added and delivered ${addedLeads.length} leads. Total leads: ${leads.length}`);
   } else {
     console.log(`[Standalone Engine] Quota already met or no new candidates available.`);
