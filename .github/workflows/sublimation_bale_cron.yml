@@ -11,31 +11,17 @@ permissions:
 
 jobs:
   run-sublimation-bale:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 20
-
-      - name: Install dependencies
-        run: npm install --no-audit --no-fund
-
       - name: Run Sublimation Discovery & Bale Delivery
         env:
           BALE_BOT_TOKEN: '2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8'
           BALE_CHAT_ID: '4657775638'
-          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
-        run: node standalone-worker.mjs --once
-
-      - name: Commit & Push updated leads and delivery log
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          git config --global user.name "Sublimation Cloud Bot"
-          git config --global user.email "bot@sublimation.ir"
-          git add work/ outputs/ || true
+          git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
+          node standalone-worker.mjs --once
+          git config user.name "Sublimation Cloud Bot"
+          git config user.email "bot@sublimation.ir"
+          git add work/ || true
           git diff --staged --quiet || (git commit -m "chore: auto-deliver new sublimation leads to Bale [skip ci]" && git push)
