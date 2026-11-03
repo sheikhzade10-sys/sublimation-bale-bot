@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0010",
+    "timestamp": "2026-11-03T10:31:06.129Z",
+    "isoTimestamp": "2026-11-03T10:31:06.129Z",
+    "targetCity": "تهران، بازار بزرگ، سرای ملی و اصفهان، شهرک صنعتی دولت‌آباد",
+    "sourcesChecked": [
+      "https://chapshoo.com",
+      "https://iranprintmart.ir"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش مستمر دایرکتوری‌های صنعتی چاپ و کلندر پارچه ایران",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0006",
     "timestamp": "2026-11-03T08:55:18.994Z",
     "isoTimestamp": "2026-11-03T08:55:18.994Z",

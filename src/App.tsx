@@ -105,7 +105,23 @@ export default function App() {
   const [statusMessage, setStatusMessage] = useState<string>('');
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const [secondsLeft, setSecondsLeft] = useState<number>(7200);
-  const [showCloudGuide, setShowCloudGuide] = useState<boolean>(false);
+  const [showCloudGuide, setShowCloudGuide] = useState<boolean>(true);
+  const [githubFlow, setGithubFlow] = useState<{
+    status: string;
+    userCode: string;
+    verificationUri: string;
+    repoUrl: string;
+    username: string;
+    message: string;
+  }>({
+    status: 'waiting_user',
+    userCode: '',
+    verificationUri: 'https://github.com/login/device',
+    repoUrl: '',
+    username: '',
+    message: '',
+  });
+  const [githubCodeCopied, setGithubCodeCopied] = useState<boolean>(false);
 
   // Divar 1-time login state
   const [divarPhoneInput, setDivarPhoneInput] = useState<string>(
@@ -129,6 +145,9 @@ export default function App() {
       }
       if (data.autoPilot) {
         setAutoPilot(data.autoPilot);
+      }
+      if (data.githubDeviceFlow) {
+        setGithubFlow(data.githubDeviceFlow);
       }
     } catch (e) {
       console.error(e);
@@ -380,7 +399,7 @@ export default function App() {
           >
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
               <h2 style={{ fontSize: '17px', fontWeight: 'bold', color: '#0a58ca', margin: 0 }}>
-                🚀 راهنمای اجرای ۲۴ ساعته در فضای ابری (بدون نیاز به روشن بودن لپ‌تاپ یا باز بودن مرورگر)
+                🚀 اتصال خودکار ۱ کلیکی به گیت‌هاب بازشده در مرورگر شما (اجرای ۲۴ ساعته بدون نیاز به سیستم)
               </h2>
               <button
                 type="button"
@@ -391,28 +410,139 @@ export default function App() {
               </button>
             </div>
 
-            <p style={{ margin: '6px 0 12px 0', color: '#333' }}>
-              برای اینکه ربات سابلیمیشن حتی وقتی لپ‌تاپ شما خاموش است یا به اینترنت دسترسی ندارید، <strong>به صورت دائم و شبانه‌روزی رأس هر ۲ ساعت کار کند و کارت‌های جدید را به گروه بله بفرستد</strong>، ۲ راهکار آماده پیش روی شماست:
-            </p>
-
-            <div style={{ background: 'white', padding: '12px 14px', borderRadius: '8px', marginBottom: '10px', border: '1px solid #cfe2ff' }}>
-              <strong style={{ color: '#0a58ca' }}>روش ۱ (پیشنهادی و کاملاً رایگان با گیت‌هاب اکشن):</strong>
-              <div style={{ marginTop: '4px' }}>
-                فایل گردش کار ابری پروژه در مسیر <code>.github/workflows/sublimation_bale_cron.yml</code> آماده شده است. تنها کافیست این پروژه را به یک مخزن رایگان گیت‌هاب (GitHub) پوش کنید.
-                سرورهای ابری گیت‌هاب به صورت خودکار و ۱۰۰٪ رایگان هر ۲ ساعت یک‌بار بیدار می‌شوند، مشتریان جدید را کشف کرده و به گروه بله می‌فرستند.
+            {githubFlow.status === 'connected' && githubFlow.repoUrl ? (
+              <div
+                style={{
+                  background: '#e6f4ea',
+                  border: '2px solid #1e8e3e',
+                  borderRadius: '10px',
+                  padding: '14px 16px',
+                  color: '#137333',
+                }}
+              >
+                <div style={{ fontWeight: 'bold', fontSize: '15px' }}>
+                  ✅ مخزن ابری گیت‌هاب و اکشن ۲۴ ساعته با موفقیت ساخته و فعال شد!
+                </div>
+                <div style={{ marginTop: '6px' }}>
+                  حساب متصل: <strong>{githubFlow.username}</strong> — از این لحظه حتی وقتی لپ‌تاپ شما خاموش است، سرورهای ابری گیت‌هاب هر ۲ ساعت یک‌بار کارت‌های جدید را به گروه بله ارسال می‌کنند.
+                </div>
+                <div style={{ marginTop: '8px' }}>
+                  <a
+                    href={`${githubFlow.repoUrl}/actions`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{
+                      display: 'inline-block',
+                      background: '#1e8e3e',
+                      color: 'white',
+                      padding: '8px 16px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontWeight: 'bold',
+                    }}
+                  >
+                    مشاهده پنل اجرای ۲۴ ساعته در گیت‌هاب ({githubFlow.repoUrl})
+                  </a>
+                </div>
               </div>
-            </div>
+            ) : (
+              <div
+                style={{
+                  background: 'white',
+                  padding: '14px 16px',
+                  borderRadius: '10px',
+                  border: '1px solid #cfe2ff',
+                }}
+              >
+                <div style={{ marginBottom: '10px', color: '#17365d' }}>
+                  چون گیت‌هاب در تب دیگر مرورگر شما باز است، سامانه کد اتصال مستقیم را تولید کرده است. تنها کافیست روی دکمهٔ سبز زیر کلیک کنید تا کد کپی شود و صفحهٔ تأیید گیت‌هاب باز شود؛ پس از زدن دکمهٔ <strong>Authorize</strong> در گیت‌هاب، این سرور <strong>به‌طور کاملاً خودکار</strong> مخزن <code>sublimation-bale-bot</code> را می‌سازد، تمام فایل‌ها را منتقل می‌کند و کرون ۲۴ ساعته را روشن می‌کند:
+                </div>
 
-            <div style={{ background: 'white', padding: '12px 14px', borderRadius: '8px', border: '1px solid #cfe2ff' }}>
-              <strong style={{ color: '#0a58ca' }}>روش ۲ (اجرا روی هر سرور مجازی VPS، رندر یا کامپیوتر دلخواه):</strong>
-              <div style={{ marginTop: '4px' }}>
-                روی دکمهٔ <strong>«دانلود پکیج دائم‌کار ربات»</strong> در بالای صفحه کلیک کنید و در سرور یا کامپیوتر خود فقط دستور زیر را اجرا کنید:
-                <pre style={{ direction: 'ltr', background: '#f8f9fa', padding: '8px 12px', borderRadius: '6px', margin: '6px 0', fontSize: '13px' }}>
-                  node standalone-worker.mjs
-                </pre>
-                این اسکریپت به صورت ۲۴ ساعته در پس‌زمینه اجرا می‌شود و نیازی به باز بودن این مرورگر یا گوگل استودیو ندارد.
+                <div
+                  style={{
+                    display: 'flex',
+                    flexWrap: 'wrap',
+                    alignItems: 'center',
+                    gap: '12px',
+                    margin: '12px 0',
+                  }}
+                >
+                  <div
+                    style={{
+                      background: '#f8f9fa',
+                      border: '2px dashed #0d6efd',
+                      borderRadius: '8px',
+                      padding: '8px 18px',
+                      fontSize: '22px',
+                      fontWeight: 'bold',
+                      letterSpacing: '3px',
+                      color: '#0a58ca',
+                      direction: 'ltr',
+                    }}
+                  >
+                    {githubFlow.userCode || 'در حال دریافت کد...'}
+                  </div>
+
+                  <a
+                    href={githubFlow.verificationUri || 'https://github.com/login/device'}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => {
+                      if (githubFlow.userCode) {
+                        navigator.clipboard.writeText(githubFlow.userCode).catch(() => {});
+                        setGithubCodeCopied(true);
+                        setTimeout(() => setGithubCodeCopied(false), 4000);
+                      }
+                    }}
+                    style={{
+                      background: '#198754',
+                      color: 'white',
+                      padding: '10px 18px',
+                      borderRadius: '8px',
+                      textDecoration: 'none',
+                      fontWeight: 'bold',
+                      fontSize: '14px',
+                    }}
+                  >
+                    {githubCodeCopied
+                      ? '✅ کد کپی شد! در تب گیت‌هاب Paste و Authorize کنید'
+                      : '🔗 ۱. کپی خودکار کد و باز کردن صفحه تأیید گیت‌هاب'}
+                  </a>
+
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      await fetch('/api/github/start-device', { method: 'POST' });
+                      await fetchWorkspace();
+                    }}
+                    style={{
+                      background: '#e9ecef',
+                      color: '#333',
+                      border: '1px solid #ced4da',
+                      padding: '10px 12px',
+                      borderRadius: '8px',
+                      cursor: 'pointer',
+                      font: 'inherit',
+                      fontSize: '13px',
+                    }}
+                  >
+                    دریافت کد جدید
+                  </button>
+                </div>
+
+                {githubFlow.status === 'deploying' && (
+                  <div style={{ color: '#0a58ca', fontWeight: 'bold', marginTop: '8px' }}>
+                    ⏳ تأییدیه گیت‌هاب دریافت شد! در حال ساخت خودکار مخزن و فعال‌سازی اکشن ۲۴ ساعته...
+                  </div>
+                )}
+
+                {githubFlow.message && (
+                  <div style={{ fontSize: '13px', color: '#555', marginTop: '4px' }}>
+                    وضعیت: {githubFlow.message}
+                  </div>
+                )}
               </div>
-            </div>
+            )}
           </div>
         )}
 

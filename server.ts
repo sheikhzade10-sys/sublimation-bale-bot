@@ -2,6 +2,7 @@ import express from 'express';
 import dns from 'dns';
 import fs from 'fs';
 import path from 'path';
+import { execSync } from 'child_process';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import {
@@ -285,7 +286,24 @@ let autoPilotState = {
   botName: savedBaleConfig.botName || '@romina_admin_test_bot',
   lastBotStatus:
     savedBaleConfig.lastBotStatus || 'توکن و گروه به صورت دائمی ذخیره شد.',
+  githubRepoUrl: (savedBaleConfig as any).githubRepoUrl || '',
+  githubUsername: (savedBaleConfig as any).githubUsername || '',
 };
+
+let githubDeviceFlowState = {
+  status: (savedBaleConfig as any).githubRepoUrl ? 'connected' : 'idle',
+  userCode: '',
+  verificationUri: 'https://github.com/login/device',
+  deviceCode: '',
+  expiresAt: 0,
+  repoUrl: (savedBaleConfig as any).githubRepoUrl || '',
+  username: (savedBaleConfig as any).githubUsername || '',
+  message: (savedBaleConfig as any).githubRepoUrl
+    ? `مخزن ابری گیت‌هاب (${(savedBaleConfig as any).githubRepoUrl}) متصل و اکشن ۲۴ ساعته فعال است.`
+    : '',
+};
+
+let githubPollingTimer: NodeJS.Timeout | null = null;
 
 function saveBaleConfig() {
   atomicWriteFileSync(
@@ -302,6 +320,8 @@ function saveBaleConfig() {
         lastRunAt: autoPilotState.lastRunAt,
         nextRunAt: autoPilotState.nextRunAt,
         lastCycleSummary: autoPilotState.lastCycleSummary,
+        githubRepoUrl: autoPilotState.githubRepoUrl || githubDeviceFlowState.repoUrl || '',
+        githubUsername: autoPilotState.githubUsername || githubDeviceFlowState.username || '',
       },
       null,
       2
@@ -309,8 +329,199 @@ function saveBaleConfig() {
   );
 }
 
+async function deployToGitHubWithToken(accessToken: string): Promise<{ ok: boolean; repoUrl?: string; error?: string }> {
+  try {
+    githubDeviceFlowState.status = 'deploying';
+    githubDeviceFlowState.message = 'در حال دریافت اطلاعات کاربری گیت‌هاب و ساخت خودکار مخزن ابری ۲۴ ساعته...';
+
+    const userResp = await fetch('https://api.github.com/user', {
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'User-Agent': 'Sublimation-Bale-Cloud-Bot',
+      },
+    });
+    if (!userResp.ok) {
+      throw new Error(`خطا در احراز هویت گیت‌هاب (${userResp.status})`);
+    }
+    const userData: any = await userResp.json();
+    const username = userData.login;
+    const repoName = 'sublimation-bale-bot';
+
+    // Create repository if it doesn't exist (public so GitHub Actions has unlimited free minutes forever)
+    await fetch('https://api.github.com/user/repos', {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Sublimation-Bale-Cloud-Bot',
+      },
+      body: JSON.stringify({
+        name: repoName,
+        description: '24/7 Autonomous Sublimation Lead Discovery & Bale Messenger Bot',
+        private: false,
+        auto_init: false,
+      }),
+    }).catch(() => {});
+
+    // Commit and push all files to main branch
+    const remoteUrl = `https://x-access-token:${accessToken}@github.com/${username}/${repoName}.git`;
+    execSync('git config --global --add safe.directory /app/applet || true', { cwd: ROOT_DIR });
+    execSync('git config user.name "Sublimation Cloud Bot" && git config user.email "bot@sublimation.ir"', { cwd: ROOT_DIR });
+    execSync('git add . && (git diff --staged --quiet || git commit -m "chore: sync latest sublimation leads for 24/7 cloud action")', { cwd: ROOT_DIR });
+    execSync(`git push "${remoteUrl}" HEAD:refs/heads/main --force`, { cwd: ROOT_DIR });
+
+    // Enable GitHub Actions & write permissions
+    await fetch(`https://api.github.com/repos/${username}/${repoName}/actions/permissions`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Sublimation-Bale-Cloud-Bot',
+      },
+      body: JSON.stringify({ enabled: true, allowed_actions: 'all' }),
+    }).catch(() => {});
+
+    await fetch(`https://api.github.com/repos/${username}/${repoName}/actions/permissions/workflow`, {
+      method: 'PUT',
+      headers: {
+        Authorization: `Bearer ${accessToken}`,
+        Accept: 'application/vnd.github+json',
+        'Content-Type': 'application/json',
+        'User-Agent': 'Sublimation-Bale-Cloud-Bot',
+      },
+      body: JSON.stringify({
+        default_workflow_permissions: 'write',
+        can_approve_pull_request_reviews: true,
+      }),
+    }).catch(() => {});
+
+    // Wait 2.5s for GitHub to index the workflow file, then trigger first run immediately
+    await new Promise((r) => setTimeout(r, 2500));
+    await fetch(
+      `https://api.github.com/repos/${username}/${repoName}/actions/workflows/sublimation_bale_cron.yml/dispatches`,
+      {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${accessToken}`,
+          Accept: 'application/vnd.github+json',
+          'Content-Type': 'application/json',
+          'User-Agent': 'Sublimation-Bale-Cloud-Bot',
+        },
+        body: JSON.stringify({ ref: 'main' }),
+      }
+    ).catch(() => {});
+
+    const repoUrl = `https://github.com/${username}/${repoName}`;
+    githubDeviceFlowState.status = 'connected';
+    githubDeviceFlowState.repoUrl = repoUrl;
+    githubDeviceFlowState.username = username;
+    githubDeviceFlowState.userCode = '';
+    githubDeviceFlowState.message = `متصل شد! اکشن ابری ۲۴ ساعته گیت‌هاب در مخزن ${repoUrl} فعال گردید و هر ۲ ساعت بدون نیاز به سیستم شما اجرا می‌شود.`;
+
+    autoPilotState.githubRepoUrl = repoUrl;
+    autoPilotState.githubUsername = username;
+    saveBaleConfig();
+
+    // Notify Bale group
+    const token = (autoPilotState.baleBotToken || DEFAULT_BALE_BOT_TOKEN).trim();
+    const chatId = (autoPilotState.baleChatId || DEFAULT_BALE_CHAT_ID).trim();
+    await fetch(`https://tapi.bale.ai/bot${token}/sendMessage`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: `✅ اتوماسیون ابری ۲۴ ساعته گیت‌هاب با موفقیت به اکانت (${username}) متصل و فعال شد!\nآدرس مخزن ابری: ${repoUrl}/actions\nاز این لحظه حتی در صورت خاموش بودن کامل کامپیوتر، سرورهای ابری گیت‌هاب هر ۲ ساعت یک‌بار کارت‌های جدید سابلیمیشن را به این گروه ارسال می‌کنند.`,
+      }),
+    }).catch(() => {});
+
+    return { ok: true, repoUrl };
+  } catch (err: any) {
+    githubDeviceFlowState.status = 'error';
+    githubDeviceFlowState.message = `خطا در استقرار خودکار گیت‌هاب: ${err?.message || String(err)}`;
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+async function startGitHubDeviceFlow() {
+  try {
+    if (githubPollingTimer) {
+      clearInterval(githubPollingTimer);
+      githubPollingTimer = null;
+    }
+    const CLIENT_ID = '178c6fc778ccc68e1d6a';
+    const resp = await fetch('https://github.com/login/device/code', {
+      method: 'POST',
+      headers: {
+        Accept: 'application/json',
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        client_id: CLIENT_ID,
+        scope: 'repo workflow',
+      }),
+    });
+    const data: any = await resp.json();
+    if (!data?.device_code || !data?.user_code) {
+      throw new Error('عدم دریافت کد اتصال از گیت‌هاب');
+    }
+
+    githubDeviceFlowState.status = 'waiting_user';
+    githubDeviceFlowState.userCode = data.user_code;
+    githubDeviceFlowState.deviceCode = data.device_code;
+    githubDeviceFlowState.verificationUri = data.verification_uri || 'https://github.com/login/device';
+    githubDeviceFlowState.expiresAt = Date.now() + (Number(data.expires_in) || 890) * 1000;
+    githubDeviceFlowState.message = `کد ${data.user_code} آماده است؛ در تب گیت‌هاب مرورگر خود تأیید کنید تا مخزن و اکشن ۲۴ ساعته خودکار ساخته شود.`;
+
+    const intervalMs = Math.max(5500, (Number(data.interval) || 5) * 1000 + 500);
+    githubPollingTimer = setInterval(async () => {
+      if (Date.now() > githubDeviceFlowState.expiresAt) {
+        if (githubPollingTimer) clearInterval(githubPollingTimer);
+        githubPollingTimer = null;
+        if (githubDeviceFlowState.status === 'waiting_user') {
+          startGitHubDeviceFlow().catch(() => {});
+        }
+        return;
+      }
+      try {
+        const tokenResp = await fetch('https://github.com/login/oauth/access_token', {
+          method: 'POST',
+          headers: {
+            Accept: 'application/json',
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            client_id: CLIENT_ID,
+            device_code: githubDeviceFlowState.deviceCode,
+            grant_type: 'urn:ietf:params:oauth:grant-type:device_code',
+          }),
+        });
+        const tokenData: any = await tokenResp.json();
+        if (tokenData?.access_token) {
+          if (githubPollingTimer) clearInterval(githubPollingTimer);
+          githubPollingTimer = null;
+          await deployToGitHubWithToken(tokenData.access_token);
+        }
+      } catch {
+        // ignore transient poll error
+      }
+    }, intervalMs);
+
+    return githubDeviceFlowState;
+  } catch (err: any) {
+    githubDeviceFlowState.status = 'error';
+    githubDeviceFlowState.message = err?.message || String(err);
+    return githubDeviceFlowState;
+  }
+}
+
 ensureDirectories();
 saveBaleConfig();
+if (!githubDeviceFlowState.repoUrl) {
+  startGitHubDeviceFlow().catch(() => {});
+}
 
 function getIsoDateOnly(): string {
   return new Date().toISOString().slice(0, 10);
@@ -1492,9 +1703,26 @@ async function startServer() {
         hasBaleToken: Boolean(autoPilotState.baleBotToken),
         hasDivarToken: Boolean(autoPilotState.divarToken),
       },
+      githubDeviceFlow: githubDeviceFlowState,
       cities: getCreativeStrategies(),
     });
   });
+
+  app.post('/api/github/start-device', async (_req, res) => {
+    const state = await startGitHubDeviceFlow();
+    res.json({ ok: true, githubDeviceFlow: state });
+  });
+
+  app.post('/api/github/deploy-token', async (req, res) => {
+    const token = String(req.body?.token || '').trim();
+    if (!token) {
+      res.status(400).json({ ok: false, error: 'توکن گیت‌هاب وارد نشده است.' });
+      return;
+    }
+    const result = await deployToGitHubWithToken(token);
+    res.json({ ...result, githubDeviceFlow: githubDeviceFlowState });
+  });
+
 
   // 1-Time Divar SMS Login (Step 1: Send OTP code from Divar to phone)
   app.post('/api/divar/send-otp', async (req, res) => {
