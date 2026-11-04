@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0015",
+    "timestamp": "2026-11-04T08:47:18.218Z",
+    "isoTimestamp": "2026-11-04T08:47:18.218Z",
+    "targetCity": "کاشان، آران و بیدگل، شهرک صنعتی سلیمان صباحی و سنندج، شهرک صنعتی شماره ۱",
+    "sourcesChecked": [
+      "https://iran-tejarat.com",
+      "https://chapshoo.com"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش خودکار ابری ۲۴ ساعته دیوار و دایرکتوری‌های صنعتی چاپ و کلندر پارچه ایران",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0014",
     "timestamp": "2026-11-04T00:28:26.516Z",
     "isoTimestamp": "2026-11-04T00:28:26.516Z",
