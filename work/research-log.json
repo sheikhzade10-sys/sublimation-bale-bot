@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0017",
+    "timestamp": "2026-11-04T23:24:29.805Z",
+    "isoTimestamp": "2026-11-04T23:24:29.805Z",
+    "targetCity": "قزوین، شهرک صنعتی البرز و رشت، شهرک صنعتی سفیدرود",
+    "sourcesChecked": [
+      "https://iranprintmart.ir",
+      "https://chapshoo.com"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش خودکار ابری ۲۴ ساعته دیوار و دایرکتوری‌های صنعتی چاپ و کلندر پارچه ایران",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0016",
     "timestamp": "2026-11-04T17:50:44.718Z",
     "isoTimestamp": "2026-11-04T17:50:44.718Z",
