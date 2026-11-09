@@ -2,8 +2,8 @@ name: 24/7 Sublimation Leads Cron to Bale
 
 on:
   schedule:
-    # Runs every 2 hours 24/7/365 on GitHub Cloud completely independent of your PC
-    - cron: '0 */2 * * *'
+    # Triggers every 30 minutes on GitHub Cloud; standalone-worker.mjs enforces the strict 2-hour rule & catches up if GitHub delays a runner
+    - cron: '*/30 * * * *'
   workflow_dispatch: # Allows manual trigger anytime
 
 permissions:
@@ -13,14 +13,18 @@ jobs:
   run-sublimation-bale:
     runs-on: ubuntu-24.04
     steps:
-      - name: Run Sublimation Discovery & Bale Delivery
+      - name: Run Sublimation Map & Directory Discovery & Bale Delivery
         env:
           BALE_BOT_TOKEN: '2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8'
           BALE_CHAT_ID: '4657775638'
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           git clone "https://x-access-token:${GH_TOKEN}@github.com/${GITHUB_REPOSITORY}.git" .
-          node standalone-worker.mjs --once
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            node standalone-worker.mjs --once
+          else
+            node standalone-worker.mjs --cron
+          fi
           git config user.name "Sublimation Cloud Bot"
           git config user.email "bot@sublimation.ir"
           git add work/ || true
