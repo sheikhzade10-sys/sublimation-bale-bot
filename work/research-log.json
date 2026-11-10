@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0020",
+    "timestamp": "2026-11-10T15:43:20.674Z",
+    "isoTimestamp": "2026-11-10T15:43:20.674Z",
+    "targetCity": "مازندران، قائمشهر، جاده نظامی، شهرک صنعتی و اهواز، شهرک صنعتی شماره ۲، بلوار صنعت",
+    "sourcesChecked": [
+      "https://neshan.org",
+      "https://balad.ir"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش ترکیبی نقشه گوگل (Google Maps)، مسیریاب بلد (balad.ir)، نقشه نشان (neshan.org)، بهترینو و کتاب اول برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0019",
     "timestamp": "2026-11-09T15:43:30.281Z",
     "isoTimestamp": "2026-11-09T15:43:30.281Z",
