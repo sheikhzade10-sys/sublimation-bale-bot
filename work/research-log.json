@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0021",
+    "timestamp": "2026-11-13T11:02:43.917Z",
+    "isoTimestamp": "2026-11-13T11:02:43.917Z",
+    "targetCity": "تهران، میدان انقلاب، خیابان کارگر جنوبی، نرسیده به کوچه وحید نظری، پلاک ۱۳۱۱ و تهران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/tavakoli-print/",
+      "https://chapinik.com"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده مستقیم دایرکتوری چاپشو (chapshoo.com) + دیوار (api.divar.ir) + نقشه گوگل، بلد و نشان برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0020",
     "timestamp": "2026-11-10T15:43:20.674Z",
     "isoTimestamp": "2026-11-10T15:43:20.674Z",
