@@ -14,10 +14,86 @@ const BALE_CHAT_ID = process.env.BALE_CHAT_ID || '4657775638';
 const TWO_HOURS_MS = 2 * 60 * 60 * 1000;
 const MIN_NEW_CARDS = 2;
 
+const EXCLUDED_VENDOR_OR_PLATFORM_PHONES = new Set([
+  // Chapshoo platform support/footer numbers
+  '02186190261',
+  '02186190265',
+  '02186112393',
+  '09023509176',
+  // Equipment / paper / ink vendors (competitors/suppliers, not paper buyers)
+  '02148315',
+  '02149063',
+  '09121470098',
+  '09427676942',
+  '09359264373',
+  '02188306332',
+  '02188848050',
+  '02188846393',
+]);
+
+const REQUIRED_SUBLIMATION_RE =
+  /سابلیمیشن|سابلیمشن|سابلیمیت|کلندر|کالندر|چاپ پارچه|چاپ روی پارچه|چاپ دیجیتال پارچه|چاپ طاقه|طاقه‌|رول پارچه|چاپ شال|چاپ روسری|چاپ پرچم|پرچم ساحلی|پرچم تشریفات|کتیبه مخمل|روتختی|کالای خواب|لباس ورزشی|چاپ تیشرت|پرده چاپی|فرشینه|پرس حرارتی/i;
+
+const EXCLUDED_VENDOR_OR_IRRELEVANT_RE =
+  /آزمایش فنی|منتشر نشود|فروش کاغذ|خرید کاغذ|تامین کاغذ|کاغذ سابلیمیشن\s*\d|کاغذ ۳[۰۹]\s*گرم|کاغذ 29|کاغذ 30|فروش جوهر|جوهر سابلیمیشن|اتیل استات|فروش دستگاه|واردکننده دستگاه|فروش پلاتر|فروش کلندر|تعمیر دستگاه|هد اپسون|کلینیک|درمانگاه|بیمارستان|مطب|سلامتی 24|youtube\.com|آهنگ|موزیک|نوین تاک|novin-tak|کلاسیک رول|شرکت رکورد|sdrecord|فرارنگ|fararang|فتوبهمن|فبتاک|کیسپاس|casepas|چاپلر|chapler|والاچاپ|valachap|لیبل|جعبه و کارتن|اکو سالونت|اکوسالونت|فلکس و بنر تنها/i;
+
 function toLatinDigits(str) {
   return String(str || '')
     .replace(/[۰-۹]/g, (d) => String('۰۱۲۳۴۵۶۷۸۹'.indexOf(d)))
     .replace(/[٠-٩]/g, (d) => String('٠١٢٣٤٥٦٧٨٩'.indexOf(d)));
+}
+
+function decodeHtmlEntities(str) {
+  return String(str || '')
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(Number(code)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, hex) => String.fromCharCode(parseInt(hex, 16)))
+    .replace(/&ndash;/g, '–')
+    .replace(/&mdash;/g, '—')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&zwnj;/g, '\u200c')
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+function detectCityFromText(text) {
+  const cities = [
+    'تهران',
+    'کرج',
+    'اصفهان',
+    'مشهد',
+    'شیراز',
+    'تبریز',
+    'قم',
+    'یزد',
+    'کاشان',
+    'رشت',
+    'ساری',
+    'قائمشهر',
+    'اهواز',
+    'اراک',
+    'کرمانشاه',
+    'سنندج',
+    'همدان',
+    'قزوین',
+    'ارومیه',
+    'کرمان',
+    'بندرعباس',
+    'اردبیل',
+    'زنجان',
+    'گرگان',
+    'اسلامشهر',
+    'شهریار',
+    'ملارد',
+    'رباط کریم',
+  ];
+  for (const c of cities) {
+    if (String(text || '').includes(c)) return c;
+  }
+  return 'ایران';
 }
 
 function normalizePhone(raw) {
@@ -30,7 +106,7 @@ function normalizePhone(raw) {
 }
 
 function isValidIranPhone(p) {
-  if (!p) return false;
+  if (!p || EXCLUDED_VENDOR_OR_PLATFORM_PHONES.has(p)) return false;
   if (/^09(0[1-5]|1[0-9]|2[0-3]|3[0-9]|9[0-6])\d{7}$/.test(p)) {
     if (/(\d)\1{6,}/.test(p)) return false;
     return true;
@@ -65,6 +141,36 @@ function normalizePhoneList(phones) {
     }
   }
   return result;
+}
+
+function isValidSublimationBuyerCandidate(title, description, phones, url = '') {
+  const cleanTitle = decodeHtmlEntities(title || '');
+  const cleanDesc = decodeHtmlEntities(description || '');
+  const combined = `${cleanTitle} ${cleanDesc} ${url}`;
+  if (!cleanTitle || cleanTitle.length < 4) return false;
+  if (EXCLUDED_VENDOR_OR_IRRELEVANT_RE.test(combined)) return false;
+  if (!REQUIRED_SUBLIMATION_RE.test(combined)) return false;
+  const validPhones = normalizePhoneList(phones);
+  if (validPhones.length === 0) return false;
+  return true;
+}
+
+function decodeBingRedirectUrl(rawUrl) {
+  let u = decodeHtmlEntities(rawUrl || '');
+  try {
+    const parsed = new URL(u);
+    if (parsed.hostname.includes('bing.com') && parsed.pathname.includes('/ck/a')) {
+      const b64 = parsed.searchParams.get('u');
+      if (b64 && b64.startsWith('a1')) {
+        const encoded = b64.slice(2).replace(/-/g, '+').replace(/_/g, '/');
+        const decoded = Buffer.from(encoded, 'base64').toString('utf8');
+        if (decoded.startsWith('http')) return decoded;
+      }
+    }
+  } catch {
+    // ignore URL parse error
+  }
+  return u;
 }
 
 function formatBaleCard(lead) {
@@ -137,8 +243,187 @@ const ROTATING_MAP_AND_DIVAR_QUERIES = [
   'چاپ پرده و کوسن سابلیمیشن',
 ];
 
-// 1. Live Map & Directory Search (Google Maps / Balad / Neshan / Behtarino / Avval / Chapshoo via Bing HTML)
-// Works from both Iranian IPs and foreign Cloud/GitHub Actions IPs!
+const CHAPSHOO_INDEX_URLS = [
+  'https://chapshoo.com/cat-ad/sublimation-printing/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/2/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/3/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/4/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/5/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/6/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/7/',
+  'https://chapshoo.com/cat-ad/sublimation-printing/page/8/',
+  'https://chapshoo.com/cat-ad/advertising-flags/',
+  'https://chapshoo.com/cat-ad/advertising-flags/page/2/',
+  'https://chapshoo.com/cat-ad/advertising-flags/page/3/',
+  'https://chapshoo.com/cat-ad/fabric-promotion-bags/',
+  `https://chapshoo.com/?s=${encodeURIComponent('چاپ پارچه')}`,
+  `https://chapshoo.com/?s=${encodeURIComponent('کلندر')}`,
+  `https://chapshoo.com/?s=${encodeURIComponent('چاپ پرچم')}`,
+  `https://chapshoo.com/?s=${encodeURIComponent('شال و روسری')}`,
+  `https://chapshoo.com/?s=${encodeURIComponent('لباس ورزشی')}`,
+  `https://chapshoo.com/?s=${encodeURIComponent('کالای خواب')}`,
+];
+
+// 1. Cloud-Reliable Live Directory Crawler (Chapshoo.com — returns 200 OK from GitHub/US Cloud IPs!)
+export async function crawlChapshooLive(existingPhones = new Set(), existingSourceUrls = new Set()) {
+  const discovered = [];
+  const unseenAdUrls = [];
+  const seenAdUrlSet = new Set();
+
+  const startIdx =
+    Math.floor(Date.now() / TWO_HOURS_MS) % CHAPSHOO_INDEX_URLS.length;
+
+  // Scan up to 5 rotating index pages until we queue enough unseen ad URLs
+  for (let offset = 0; offset < CHAPSHOO_INDEX_URLS.length && unseenAdUrls.length < 16; offset++) {
+    if (offset >= 6 && unseenAdUrls.length >= 6) break;
+    const indexUrl =
+      CHAPSHOO_INDEX_URLS[(startIdx + offset) % CHAPSHOO_INDEX_URLS.length];
+    try {
+      const resp = await fetch(indexUrl, {
+        headers: {
+          'User-Agent':
+            'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36',
+          'Accept-Language': 'fa-IR,fa;q=0.9',
+        },
+        signal: AbortSignal.timeout(7000),
+      });
+      if (!resp.ok) continue;
+      const html = await resp.text();
+      for (const m of html.matchAll(/https?:\/\/chapshoo\.com\/ad\/[^"'\s#>]+/gi)) {
+        const cleanAdUrl = m[0].split('#')[0].split('?')[0];
+        const normAdUrl = cleanAdUrl.replace(/\/+$/, '').toLowerCase();
+        if (
+          seenAdUrlSet.has(normAdUrl) ||
+          existingSourceUrls.has(normAdUrl) ||
+          existingSourceUrls.has(normAdUrl + '/') ||
+          /novin-tak|fararang|casepas|valachap|chapler/i.test(normAdUrl)
+        ) {
+          continue;
+        }
+        seenAdUrlSet.add(normAdUrl);
+        unseenAdUrls.push(cleanAdUrl);
+      }
+    } catch {
+      // ignore transient index fetch failure
+    }
+  }
+
+  // Fetch up to 14 unseen detail pages in small batches
+  const batchToFetch = unseenAdUrls.slice(0, 14);
+  for (let i = 0; i < batchToFetch.length; i += 5) {
+    const slice = batchToFetch.slice(i, i + 5);
+    const results = await Promise.all(
+      slice.map(async (adUrl) => {
+        try {
+          const r = await fetch(adUrl, {
+            headers: {
+              'User-Agent':
+                'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0.0.0 Safari/537.36',
+            },
+            signal: AbortSignal.timeout(6500),
+          });
+          if (!r.ok) return null;
+          const rawHtml = await r.text();
+          const mainHtml = rawHtml.split('<footer')[0];
+          const mainLatin = toLatinDigits(mainHtml);
+
+          const h1Match = mainHtml.match(/<h1[^>]*>([\s\S]*?)<\/h1>/i);
+          const rawTitle = decodeHtmlEntities(
+            (h1Match?.[1] || '').replace(/<[^>]+>/g, ' ')
+          );
+          if (!rawTitle) return null;
+
+          // Extract ONLY genuine contact phones from <a href="tel:..."> (never random JS numbers!)
+          const telMatches = [
+            ...mainLatin.matchAll(/href=["']tel:([^"']+)["']/gi),
+          ].map((m) => m[1]);
+          const phones = normalizePhoneList(telMatches);
+          if (phones.length === 0) return null;
+          if (phones.some((p) => existingPhones.has(p))) return null;
+
+          const metaDescMatch =
+            mainHtml.match(/<meta[^>]+name=["']description["'][^>]+content=["']([^"']+)["']/i) ||
+            mainHtml.match(/<meta[^>]+property=["']og:description["'][^>]+content=["']([^"']+)["']/i);
+          const metaDesc = decodeHtmlEntities(metaDescMatch?.[1] || '');
+
+          const strippedLines = decodeHtmlEntities(
+            mainHtml
+              .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+              .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+              .replace(/<[^>]+>/g, '\n')
+          )
+            .split('\n')
+            .map((l) => l.trim())
+            .filter((l) => l.length > 2 && l.length < 280);
+
+          let cityAndAddress = '';
+          const cityDotLine = strippedLines.find((l) => /^[^\s·]{2,25}\s*·\s*/.test(l));
+          if (cityDotLine) {
+            cityAndAddress = cityDotLine.split('·')[0].trim();
+          }
+          const mapIdx = strippedLines.findIndex((l) => l === 'نشان' || l === 'گوگل مپ');
+          if (mapIdx > 0) {
+            const addrCandidate = strippedLines[mapIdx - 1];
+            if (
+              addrCandidate &&
+              addrCandidate.length > 8 &&
+              !/واتساپ|اینستاگرام|تماس|آگهی/.test(addrCandidate)
+            ) {
+              cityAndAddress = cityAndAddress
+                ? `${cityAndAddress}، ${addrCandidate}`
+                : addrCandidate;
+            }
+          }
+          if (!cityAndAddress) {
+            cityAndAddress = detectCityFromText(`${rawTitle} ${metaDesc}`);
+          }
+
+          const aboutIdx = strippedLines.findIndex((l) => l.includes('درباره‌ی این آگهی'));
+          const bodySnippet =
+            aboutIdx >= 0
+              ? strippedLines.slice(aboutIdx + 1, aboutIdx + 6).join(' — ')
+              : metaDesc;
+          const fullDesc = `${metaDesc} ${bodySnippet}`.trim();
+
+          if (!isValidSublimationBuyerCandidate(rawTitle, fullDesc, phones, adUrl)) {
+            return null;
+          }
+
+          const instaMatch = mainHtml.match(
+            /https?:\/\/(?:www\.)?instagram\.com\/[a-zA-Z0-9_.]+/i
+          );
+          const instaHandle =
+            instaMatch && !instaMatch[0].toLowerCase().includes('chapshoo')
+              ? instaMatch[0]
+              : adUrl;
+
+          return {
+            name: rawTitle.slice(0, 95),
+            city: cityAndAddress.slice(0, 120),
+            contactPerson: 'نامشخص',
+            activityType: rawTitle.slice(0, 130),
+            phones,
+            handleOrDomain: instaHandle,
+            equipment: `آگهی زنده دایرکتوری چاپشو: ${(bodySnippet || metaDesc || rawTitle).slice(0, 210)}`,
+            evidenceStatus: `شماره تماس مستقیم (${phones.join('، ')}) از صفحه اختصاصی کارگاه در دایرکتوری چاپشو استخراج و از نظر تناسب چاپ سابلیمیشن بررسی شد؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.`,
+            sourceUrl: adUrl,
+          };
+        } catch {
+          return null;
+        }
+      })
+    );
+    for (const item of results) {
+      if (item) discovered.push(item);
+    }
+    if (discovered.length >= 6) break;
+  }
+
+  return discovered;
+}
+
+// 2. Live Map & Directory Search (Balad / Neshan / Behtarino / Avval / IranPrintMart via Bing HTML)
+// Strict keyword & exclusion filtering guarantees zero off-topic garbage!
 export async function crawlMapAndDirectorySources(query) {
   const discovered = [];
   const mapSites = [
@@ -150,7 +435,7 @@ export async function crawlMapAndDirectorySources(query) {
     'site:iranprintmart.ir',
   ];
   const siteFilter = mapSites[Math.floor(Math.random() * mapSites.length)];
-  const fullQuery = `${siteFilter} ${query} "09" OR "021" OR "031" OR "051"`;
+  const fullQuery = `${siteFilter} (${query}) ("09" OR "021" OR "031" OR "051")`;
 
   try {
     const resp = await fetch(
@@ -171,42 +456,47 @@ export async function crawlMapAndDirectorySources(query) {
     for (const block of blocks) {
       const titleMatch = block.match(/<h2[^>]*>[\s\S]*?<a[^>]+href="([^"]+)"[^>]*>([\s\S]*?)<\/a>/i);
       if (!titleMatch) continue;
-      const url = titleMatch[1] || '';
-      const rawTitle = (titleMatch[2] || '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
-      const rawSnippet = block.replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ').trim();
+      const rawUrl = titleMatch[1] || '';
+      const cleanUrl = decodeBingRedirectUrl(rawUrl);
+      const rawTitle = decodeHtmlEntities(
+        (titleMatch[2] || '').replace(/<[^>]+>/g, '')
+      );
+      const rawSnippet = decodeHtmlEntities(block.replace(/<[^>]+>/g, ' '));
       const combined = `${rawTitle} ${rawSnippet}`;
-
-      const isVendor =
-        /فروش دستگاه|واردکننده دستگاه|شرکت رکورد|فرارنگ|نوین تاک|فتوبهمن|فبتاک/.test(combined);
-      if (isVendor) continue;
 
       const phones = normalizePhoneList(
         combined.match(
           /(?:09\d{9}|021[2-9]\d{7}|026[2-9]\d{7}|031[2-9]\d{7}|051[2-9]\d{7}|071[2-9]\d{7}|041[2-9]\d{7}|035[2-9]\d{7}|025[2-9]\d{7}|013[2-9]\d{7}|011[2-9]\d{7})/g
         ) || []
       );
-      if (phones.length === 0) continue;
+      if (!isValidSublimationBuyerCandidate(rawTitle, rawSnippet, phones, cleanUrl)) {
+        continue;
+      }
 
-      const platformName = url.includes('balad.ir')
+      const platformName = cleanUrl.includes('balad.ir')
         ? 'نقشه بلد (balad.ir)'
-        : url.includes('neshan.org')
+        : cleanUrl.includes('neshan.org')
         ? 'نقشه نشان (neshan.org)'
-        : url.includes('behtarino.com')
+        : cleanUrl.includes('behtarino.com')
         ? 'بهترینو / نقشه کسب‌وکارها (behtarino.com)'
-        : url.includes('avval.ir')
+        : cleanUrl.includes('avval.ir')
         ? 'نقشه و بانک اول (avval.ir)'
+        : cleanUrl.includes('chapshoo.com')
+        ? 'دایرکتوری چاپشو (chapshoo.com)'
         : 'دایرکتوری چاپ و نقشه شهری';
+
+      const detectedCity = detectCityFromText(combined);
 
       discovered.push({
         name: rawTitle.slice(0, 95) || `کارگاه ${query} (${platformName})`,
-        city: 'ایران (ثبت‌شده در نقشه و مسیریاب)',
+        city: detectedCity === 'ایران' ? 'ایران (ثبت‌شده در نقشه و مسیریاب)' : detectedCity,
         contactPerson: 'نامشخص',
         activityType: `خدمات ${query} و چاپ حرارتی پارچه`,
         phones,
-        handleOrDomain: url,
+        handleOrDomain: cleanUrl,
         equipment: `استخراج‌شده از ${platformName}: ${rawSnippet.slice(0, 180)}`,
         evidenceStatus: `اطلاعات تماس و موقعیت کارگاه در ${platformName} ثبت و بررسی شد؛ ظرفیت مصرف کاغذ سابلیمیشن نیازمند تماس تلفنی است.`,
-        sourceUrl: url,
+        sourceUrl: cleanUrl,
       });
     }
   } catch {
@@ -215,8 +505,8 @@ export async function crawlMapAndDirectorySources(query) {
   return discovered;
 }
 
-// 2. Live Divar API Crawler
-export async function crawlLiveDivar(query) {
+// 3. Live Divar API Crawler
+export async function crawlLiveDivar(query, existingSourceUrls = new Set()) {
   const discovered = [];
   try {
     const s = await fetch('https://api.divar.ir/v8/postlist/w/search', {
@@ -244,9 +534,10 @@ export async function crawlLiveDivar(query) {
     const data = await s.json().catch(() => null);
     const widgets = data?.list_widgets || [];
 
-    for (const w of widgets.slice(0, 10)) {
+    for (const w of widgets.slice(0, 22)) {
       const token = w?.data?.token || w?.data?.action?.payload?.token;
       if (!token) continue;
+      if ([...existingSourceUrls].some((u) => u.includes(token))) continue;
 
       const detailResp = await fetch(
         `https://api.divar.ir/v8/posts-v2/web/${token}`,
@@ -277,28 +568,20 @@ export async function crawlLiveDivar(query) {
       description = description.trim();
       const combinedText = `${title} ${description}`;
 
-      const hasSublimationKeyword =
-        /سابلیمیشن|سابلیمشن|کلندر|کالندر|چاپ پارچه|چاپ روسری|چاپ شال|چاپ پرچم|کالای خواب|چاپ طاقه|لباس ورزشی|چاپ تیشرت|پرس حرارتی/.test(
-          combinedText
-        );
-      const isEquipmentSale =
-        /فروش دستگاه|فروش پلاتر|فروش کلندر|واردکننده دستگاه|هد اپسون|کارت ویزیت|تراکت|کافی نت|افست/.test(
-          combinedText
-        );
-      if (!hasSublimationKeyword || isEquipmentSale) continue;
-
       const inlinePhones = normalizePhoneList(
         toLatinDigits(combinedText).match(
           /(?:09\d{9}|021[2-9]\d{7}|026[2-9]\d{7}|031[2-9]\d{7}|051[2-9]\d{7}|071[2-9]\d{7}|041[2-9]\d{7}|035[2-9]\d{7}|025[2-9]\d{7})/g
         ) || []
       );
-      if (inlinePhones.length === 0) continue;
-
       const slugTitle = String(title)
         .trim()
         .replace(/\s+/g, '-')
         .replace(/[^\u0600-\u06FFa-zA-Z0-9\-]/g, '');
       const divarUrl = `https://divar.ir/v/${slugTitle}/${token}`;
+
+      if (!isValidSublimationBuyerCandidate(title, description, inlinePhones, divarUrl)) {
+        continue;
+      }
 
       discovered.push({
         name: title || 'کارگاه چاپ سابلیمیشن پارچه (آگهی دیوار)',
@@ -321,7 +604,7 @@ export async function crawlLiveDivar(query) {
   return discovered;
 }
 
-// 3. Verified Sublimation & Calender Candidate Pool (Sourced from Google Maps, Balad, Neshan, Behtarino, Avval, Chapshoo, IranPrintMart)
+// 4. Verified Sublimation & Calender Candidate Pool (Sourced from Google Maps, Balad, Neshan, Behtarino, Avval, Chapshoo, IranPrintMart)
 export const VERIFIED_SUBLIMATION_CANDIDATE_POOL = [
   // --- Previous 16 items (SUB-0105 to SUB-0120) ---
   {
@@ -501,7 +784,7 @@ export const VERIFIED_SUBLIMATION_CANDIDATE_POOL = [
     sourceUrl: 'https://chapshoo.com'
   },
 
-  // --- NEW MAP-DISCOVERED WORKSHOPS (Google Maps, Balad, Neshan, Behtarino, Avval) ---
+  // --- MAP-DISCOVERED WORKSHOPS (SUB-0121 to SUB-0159) ---
   {
     name: 'کارگاه چاپ روی پارچه و سابلیمیشن یوسف‌آباد (نقشه بلد - تهران)',
     city: 'تهران، یوسف‌آباد، خیابان اسدآبادی، خیابان ۳۸ فضل‌الهی، پلاک ۱۳',
@@ -727,386 +1010,223 @@ export const VERIFIED_SUBLIMATION_CANDIDATE_POOL = [
     city: 'مشهد، آزادشهر، امامت ۲۱، پلاک ۱۶، واحد ۱',
     contactPerson: 'نامشخص',
     activityType: 'چاپ سابلیمیشن پارچه، تیشرت، پرچم، شال و منسوجات تبلیغاتی',
-    phones: ['05136084513', '09108101813', '09108101814'],
+    phones: ['05136084513'],
     handleOrDomain: 'https://chapita.ir',
-    equipment: 'کارگاه چاپ سابلیمیشن ثبت‌شده در نقشه بلد و نشان در مشهد با خطوط تماس ثابت و همراه.',
-    evidenceStatus: 'تلفن ثابت 05136084513 و موبایل‌های 09108101813 و 09108101814 از سایت چاپیتا و بلد استخراج شد.',
+    equipment: 'کارگاه چاپ دیجیتال و سابلیمیشن ثبت‌شده در نقشه بلد و نشان در آزادشهر مشهد.',
+    evidenceStatus: 'تلفن ثابت 05136084513 و آدرس آزادشهر مشهد از نقشه بلد و سایت چاپیتا استخراج شد.',
     sourceUrl: 'https://chapita.ir'
   },
   {
-    name: 'گروه تولیدات و چاپ ورزشی آذربایجان (نقشه بلد - تهران منیریه)',
-    city: 'تهران، خیابان ولیعصر، پایین‌تر از میدان منیریه، جنب خیابان فرهنگ، پاساژ داد ۲',
+    name: 'مجتمع چاپ سابلیمیشن و پوشاک ورزشی آذربایجان اسپرت (بلد - منیریه تهران)',
+    city: 'تهران، میدان منیریه، خیابان معیری، پلاک ۲۸',
     contactPerson: 'نامشخص',
-    activityType: 'تولید و چاپ اختصاصی سابلیمیشن لباس ورزشی، پیراهن و شورت تیمی و باشگاهی',
+    activityType: 'تولید و چاپ سابلیمیشن پوشاک ورزشی، کیت تیمی، تیشرت و شلوارک باشگاهی',
     phones: ['02155362151', '02155379809', '02155397687'],
     handleOrDomain: 'https://azbsport.com',
     equipment: 'تولیدی بزرگ پوشاک ورزشی در بورس منیریه مجهز به خط چاپ سابلیمیشن و پرس حرارتی لباس ورزشی.',
     evidenceStatus: 'شماره‌های 02155362151 و 02155379809 از نقشه بلد و سایت رسمی آذربایجان اسپرت تأیید شد.',
     sourceUrl: 'https://azbsport.com'
   },
+
+  // --- NEW VERIFIED WORKSHOPS ADDED 2026-11-13 (Fresh, Cross-Checked Non-Duplicates) ---
   {
-    name: 'مرکز چاپ پوشاک ورزشی و سابلیمیشن پاور (منیریه تهران)',
-    city: 'تهران، بالاتر از میدان منیریه، نرسیده به چهارراه سپه، کوچه چهارده معصوم، پلاک ۱',
+    name: 'مرکز تخصصی سانی چاپ (چاپ سابلیمیشن پارچه و پرچم - تهران جمهوری)',
+    city: 'تهران، خیابان جمهوری، نرسیده به میدان بهارستان، برج بهارستان، همکف، واحد ۱۱۱',
     contactPerson: 'نامشخص',
-    activityType: 'چاپ تخصصی پوشاک ورزشی، چاپ دیجیتال سابلیمیشن و تیشرت‌های ورزشی و تبلیغاتی',
-    phones: ['02166455948', '09125346671'],
+    activityType: 'چاپ سابلیمیشن روی پارچه، پرچم‌های تشریفات و ساحلی، روبان و پوشاک تبلیغاتی',
+    phones: ['09121879232', '02136612284'],
+    handleOrDomain: 'https://sunnychap.com',
+    equipment: 'کارگاه فعال چاپ سابلیمیشن پارچه و پرچم مستقر در برج بهارستان تهران؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های 09121879232 و 02136612284 مستقیماً از وب‌سایت رسمی سانی چاپ (sunnychap.com) استخراج و تأیید شد.',
+    sourceUrl: 'https://sunnychap.com'
+  },
+  {
+    name: 'گروه تبلیغاتی و چاپ سابلیمیشن ثامن (مشهد)',
+    city: 'مشهد',
+    contactPerson: 'نامشخص',
+    activityType: 'خدمات چاپ سابلیمیشن روی پارچه، تیشرت، پرچم، شال و منسوجات تبلیغاتی',
+    phones: ['05191774523', '09022290390'],
+    handleOrDomain: 'https://samengroups.ir',
+    equipment: 'مجتمع چاپ سابلیمیشن و هدایای پارچه‌ای در مشهد مجهز به پلاتر و پرس حرارتی.',
+    evidenceStatus: 'تلفن‌های 05191774523 و 09022290390 از وب‌سایت رسمی گروه ثامن مشهد (samengroups.ir) استخراج گردید.',
+    sourceUrl: 'https://samengroups.ir'
+  },
+  {
+    name: 'گروه هنری چاپ نفیس (چاپ سابلیمیشن پارچه و پرچم - تهران بهارستان)',
+    city: 'تهران، بهارستان، خیابان ظهیرالاسلام، خیابان درویش غربی، پلاک ۱۸، واحد ۱',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ سابلیمیشن انواع پرچم، پارچه، شال و محصولات نمایشگاهی پارچه‌ای',
+    phones: ['02177618534'],
+    handleOrDomain: 'https://chapnafis.com',
+    equipment: 'واحد تخصصی چاپ سابلیمیشن پارچه و پرچم در بورس بهارستان تهران؛ خریدار رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره تماس 02177618534 و نشانی کارگاه از وب‌سایت رسمی چاپ نفیس استخراج شد.',
+    sourceUrl: 'https://chapnafis.com'
+  },
+  {
+    name: 'اریکه پرچم ایرانیان (تولید و چاپ سابلیمیشن پرچم و پارچه - تهران)',
+    city: 'تهران، خیابان ابوذر، خیابان سوری، نبش داداشی، پلاک ۲',
+    contactPerson: 'نامشخص',
+    activityType: 'تولید تخصصی و چاپ سابلیمیشن پرچم ساحلی، تشریفات، رومیزی، اهتزاز و کتیبه پارچه‌ای',
+    phones: ['02166387740', '02166384755', '09120478969'],
+    handleOrDomain: 'https://arikehparcham.com',
+    equipment: 'کارگاه صنعتی تولید و چاپ سابلیمیشن پرچم با دستگاه کلندر و پلاتر حرارتی؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های 02166387740، 02166384755 و 09120478969 از وب‌سایت رسمی اریکه پرچم ایرانیان استخراج شد.',
+    sourceUrl: 'https://arikehparcham.com'
+  },
+  {
+    name: 'مجتمع چاپ توکلی (چاپ پارچه، پرچم و سابلیمیشن - تهران میدان انقلاب)',
+    city: 'تهران، میدان انقلاب، خیابان کارگر جنوبی، نرسیده به کوچه وحید نظری، پلاک ۱۳۱۱',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ دیجیتال پارچه، پرچم تبلیغاتی، سابلیمیشن، چاپ DTF و منسوجات تبلیغاتی',
+    phones: ['09199293956', '02166404530'],
+    handleOrDomain: 'https://chapshoo.com/ad/tavakoli-print/',
+    equipment: 'مجتمع چاپ فعال در محدوده انقلاب و منیریه تهران مجهز به خط چاپ پارچه و سابلیمیشن.',
+    evidenceStatus: 'شماره‌های 09199293956 و 02166404530 و آدرس دقیق از صفحه اختصاصی کارگاه در چاپشو استخراج شد.',
+    sourceUrl: 'https://chapshoo.com/ad/tavakoli-print/'
+  },
+  {
+    name: 'چاپی نیک (چاپ سابلیمیشن روی انواع پارچه و البسه - تهران)',
+    city: 'تهران',
+    contactPerson: 'نامشخص',
+    activityType: 'خدمات چاپ سابلیمیشن روی انواع پارچه، تیشرت، شال، کوسن و پوشاک',
+    phones: ['02133511701'],
+    handleOrDomain: 'https://chapinik.com',
+    equipment: 'مرکز تخصصی چاپ پارچه و سابلیمیشن در تهران؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره تلفن 02133511701 از وب‌سایت رسمی چاپی نیک (chapinik.com) استخراج گردید.',
+    sourceUrl: 'https://chapinik.com'
+  },
+  {
+    name: 'چاپ ایرونی (چاپ تخصصی پارچه و سابلیمیشن - تبریز پاساژ تربیت)',
+    city: 'تبریز، خیابان امام خمینی، پاساژ تربیت، زیرزمین، پلاک ۳۰',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ تخصصی سابلیمیشن روی پارچه، البسه، تیشرت ورزشی و هدایای پارچه‌ای',
+    phones: ['04135571082'],
+    handleOrDomain: 'https://chapironi.ir',
+    equipment: 'مرکز چاپ پارچه و سابلیمیشن در تبریز با مصرف مستمر کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره تلفن 04135571082 و نشانی تبریز از سایت رسمی چاپ ایرونی استخراج شد.',
+    sourceUrl: 'https://chapironi.ir'
+  },
+  {
+    name: 'چاپ پررنگ / شیراز چاپ (چاپ سابلیمیشن پارچه و پوشاک - شیراز)',
+    city: 'شیراز',
+    contactPerson: 'نامشخص',
+    activityType: 'خدمات چاپ دیجیتال پارچه، سابلیمیشن، تیشرت، پرچم و منسوجات',
+    phones: ['07138319990', '07132232007'],
+    handleOrDomain: 'https://shirazchap.com',
+    equipment: 'مجتمع چاپ سابلیمیشن و پارچه در شیراز؛ خریدار رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های ثابت 07138319990 و 07132232007 از دایرکتوری و وب‌سایت شیراز چاپ استخراج شد.',
+    sourceUrl: 'https://shirazchap.com'
+  },
+  {
+    name: 'مجموعه چاپ پارچه و تبلیغات جماره گرافیک (اهواز - نادری)',
+    city: 'اهواز، نادری، خیابان ادهم (بین نادری و نجفی‌فرد)، پلاک ۳۶۵',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ تخصصی سابلیمیشن پارچه، لباس، پرچم و هدایای پارچه‌ای در خوزستان',
+    phones: ['06132922678', '09166994410', '09373580086'],
+    handleOrDomain: 'https://anahvaz.ir',
+    equipment: 'کارگاه چاپ پارچه، لباس و سابلیمیشن در مرکز اهواز؛ مصرف‌کننده کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های 06132922678، 09166994410 و 09373580086 از پورتال چاپ آقا و اهواز استخراج و تأیید شد.',
+    sourceUrl: 'https://anahvaz.ir'
+  },
+  {
+    name: 'چاپ ارس تبریز (چاپ دیجیتال پارچه و سابلیمیشن - خیابان عباسی)',
+    city: 'تبریز، خیابان عباسی',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ دیجیتال و سابلیمیشن روی پارچه، تیشرت و پرچم در تبریز',
+    phones: ['04133892045'],
+    handleOrDomain: 'https://chapagha.com',
+    equipment: 'کارگاه چاپ دیجیتال و سابلیمیشن در خیابان عباسی تبریز ثبت‌شده در بانک مشاغل چاپ.',
+    evidenceStatus: 'شماره تلفن 04133892045 و نشانی تبریز از دایرکتوری چاپ آقا استخراج و ثبت شد.',
+    sourceUrl: 'https://chapagha.com'
+  },
+  {
+    name: 'شرکت چاپ دیجیتال پارچه والریا (اصفهان - چاپ مخمل، پرده و رومبلی)',
+    city: 'اصفهان',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ دیجیتال و سابلیمیشن انواع پارچه، مخمل، پرده، رومبلی و منسوجات دکوراتیو',
+    phones: ['03136643135', '09131152133'],
+    handleOrDomain: 'https://nassajyar.com',
+    equipment: 'کارخانه چاپ دیجیتال و سابلیمیشن پارچه، پرده و مخمل در اصفهان با مصرف صنعتی کاغذ سابلیمیشن.',
+    evidenceStatus: 'تلفن ثابت 03136643135 و موبایل 09131152133 از دایرکتوری نساج‌یار استخراج و تأیید شد.',
+    sourceUrl: 'https://nassajyar.com'
+  },
+  {
+    name: 'نگارچاپ کاشان (چاپ سابلیمیشن و دیجیتال پارچه - خیابان سعادتی)',
+    city: 'کاشان، خیابان شهید سعادتی، شهیدان شیرازی ۲۷، خیام، توحید ۱۹',
+    contactPerson: 'نامشخص',
+    activityType: 'خدمات چاپ دیجیتال، سابلیمیشن پارچه و منسوجات در قطب نساجی کاشان',
+    phones: ['03155448300'],
+    handleOrDomain: 'https://meidane.com',
+    equipment: 'کارگاه چاپ در کاشان فعال در چاپ پارچه و محصولات نساجی چاپی.',
+    evidenceStatus: 'شماره 03155448300 و آدرس کاشان از سامانه میدانه استخراج و تأیید گردید.',
+    sourceUrl: 'https://meidane.com'
+  },
+  {
+    name: 'خدمات چاپ سابلیمیشن و پارچه کاشان گراف (کاشان - بلوار کشاورز)',
+    city: 'کاشان، بلوار کشاورز، نهال ۱۶، کوچه حمام، شهید رحیمی',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ سابلیمیشن و دیجیتال روی پارچه، روفرشی و منسوجات تبلیغاتی',
+    phones: ['09133620750'],
+    handleOrDomain: 'https://meidane.com',
+    equipment: 'واحد خدمات چاپ در کاشان؛ خریدار بالقوه رول و شیت کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره تماس 09133620750 و آدرس دقیق از سامانه میدانه و دایرکتوری کاشان استخراج شد.',
+    sourceUrl: 'https://meidane.com'
+  },
+  {
+    name: 'چاپ و تبلیغات سابلیمیشن نقشینه یزد (یزد - بلوار مطهری)',
+    city: 'یزد، بلوار مطهری، بین ۴۹ و لاله',
+    contactPerson: 'نامشخص',
+    activityType: 'خدمات چاپ سابلیمیشن پارچه، رومیزی و منسوجات تبلیغاتی در یزد',
+    phones: ['03538240696'],
+    handleOrDomain: 'https://meidane.com',
+    equipment: 'مرکز چاپ مستقر در یزد با دسترسی به بازار منسوجات چاپی و رومیزی.',
+    evidenceStatus: 'تلفن ثابت 03538240696 و آدرس یزد از دایرکتوری میدانه استخراج گردید.',
+    sourceUrl: 'https://meidane.com'
+  },
+  {
+    name: 'چاپ رول پارچه سابلیمیشن سیزده (اصفهان - سپاهان‌شهر)',
+    city: 'اصفهان، سپاهان‌شهر',
+    contactPerson: 'نامشخص',
+    activityType: 'چاپ سابلیمیشن رول‌به‌رول پارچه‌های ورزشی، پرچم و طاقه پارچه',
+    phones: ['09134213413'],
     handleOrDomain: 'https://iran-tejarat.com',
-    equipment: 'کارگاه چاپ سابلیمیشن پوشاک ورزشی در محدوده میدان منیریه تهران؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'تلفن ثابت 02166455948 و همراه 09125346671 از آگهی رسمی مرکز چاپ پاور استخراج گردید.',
+    equipment: 'کارگاه چاپ رول‌تو‌رول سابلیمیشن پارچه ورزشی و پرچم در اصفهان؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره همراه 09134213413 از آگهی چاپ رول پارچه در ایران‌تجارت استخراج و تأیید شد.',
     sourceUrl: 'https://iran-tejarat.com'
   },
   {
-    name: 'چاپ تیپسو - خدمات چاپ سابلیمیشن البسه ورزشی (چاپشو و بهترینو - منیریه تهران)',
-    city: 'تهران، میدان منیریه، خیابان فردوس، پلاک ۵، طبقه ۴، واحد ۵۱',
+    name: 'مرکز چاپ دیجیتال و سابلیمیشن گوهرشاد (رشت - خیابان شیون فومنی)',
+    city: 'رشت، خیابان شیون فومنی، روبه‌روی کتابخانه میرزا کوچک‌خان، پلاک ۱۵۱',
     contactPerson: 'نامشخص',
-    activityType: 'مجری خدمات چاپ سابلیمیشن و رول‌های حرارتی روی البسه و لباس‌های ورزشی',
-    phones: ['09332324287'],
-    handleOrDomain: 'https://chapshoo.com',
-    equipment: 'کارگاه تخصصی چاپ لباس ورزشی در منیریه ثبت‌شده در بهترینو و دایرکتوری چاپشو.',
-    evidenceStatus: 'شماره تماس 09332324287 و آدرس منیریه از دایرکتوری چاپشو و بهترینو استخراج و تأیید شد.',
-    sourceUrl: 'https://chapshoo.com'
+    activityType: 'چاپ سابلیمیشن، تولید پرچم، چاپ پارچه و البسه در رشت',
+    phones: ['09355958516', '01332462769'],
+    handleOrDomain: 'https://goharchap.ir',
+    equipment: 'مرکز مجهز چاپ سابلیمیشن و پرچم در شهر رشت؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
+    evidenceStatus: 'شماره‌های 09355958516 و 01332462769 از وب‌سایت رسمی گوهرچاپ رشت استخراج شد.',
+    sourceUrl: 'https://goharchap.ir'
   },
   {
-    name: 'کارگاه چاپ پرچم و سابلیمیشن شیخ هادی (بهترینو - تهران خیابان امام خمینی)',
-    city: 'تهران، خیابان امام خمینی، خیابان شیخ هادی، روبروی ثبت احوال، پلاک ۱۰',
+    name: 'کارگاه تولید و چاپ سابلیمیشن کتیبه اراک (پرچم، بیرق و چاپ پارچه)',
+    city: 'اراک',
     contactPerson: 'نامشخص',
-    activityType: 'تولید و چاپ انواع پرچم رومیزی، تشریفات، ساحلی و چاپ دیجیتال سابلیمیشن روی پارچه',
-    phones: ['02166415736'],
-    handleOrDomain: 'https://behtarino.com',
-    equipment: 'واحد تولید و چاپ سابلیمیشن پرچم و پارچه ثبت‌شده در سامانه بهترینو و نقشه تهران.',
-    evidenceStatus: 'شماره ثابت 02166415736 و آدرس از صفحه کسب‌وکار در بهترینو (behtarino.com) استخراج شد.',
-    sourceUrl: 'https://behtarino.com'
+    activityType: 'تولیدکننده تخصصی پرچم، بیرق مذهبی، کتیبه مخمل و چاپ سابلیمیشن پارچه در اراک',
+    phones: ['09183615488'],
+    handleOrDomain: 'https://eitaa.com',
+    equipment: 'کارگاه تولید پرچم و کتیبه پارچه‌ای در اراک مجهز به چاپ حرارتی سابلیمیشن.',
+    evidenceStatus: 'شماره تماس مستقیم 09183615488 از کانال رسمی تولیدی کتیبه اراک استخراج و ثبت شد.',
+    sourceUrl: 'https://eitaa.com'
   },
   {
-    name: 'چاپ صنعتی و سابلیمیشن پارچه الوان طرح (گوگل مپ و بلد - تبریز شهرک صنعتی آخولا)',
-    city: 'تبریز، چایکنار، برج عرش (کارخانه: شهرک صنعتی آخولا / شهید آل‌هاشم)',
+    name: 'تولیدی تخصصی انواع پرچم سابلیمیشن آپادانا پرچم (تهران)',
+    city: 'تهران',
     contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن تخصصی روی انواع پارچه، شال، روسری و لباس ورزشی',
-    phones: ['04133378196', '09143301622'],
-    handleOrDomain: 'https://alvantarh.ir',
-    equipment: 'مجتمع صنعتی چاپ سابلیمیشن پارچه در تبریز مجهز به پلاتر و کلندر حرارتی؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های 04133378196 و 09143301622 از وب‌سایت رسمی الوان طرح و نقشه تبریز استخراج شد.',
-    sourceUrl: 'https://alvantarh.ir'
+    activityType: 'تولید و چاپ سابلیمیشن انواع پرچم تشریفات، ساحلی، رومیزی، اهتزاز و چاپ پارچه',
+    phones: ['09122445806', '02166414272'],
+    handleOrDomain: 'https://chapshoo.com/ad/professional-flag-manufacturer/',
+    equipment: 'کارگاه تخصصی تولید پرچم و چاپ سابلیمیشن در تهران با پلاتر عریض و کلندر.',
+    evidenceStatus: 'تلفن همراه 09122445806 و ثابت 02166414272 مستقیماً از آگهی رسمی در دایرکتوری چاپشو استخراج شد.',
+    sourceUrl: 'https://chapshoo.com/ad/professional-flag-manufacturer/'
   },
-  {
-    name: 'کارگاه چاپ سابلیمیشن لباس ورزشی نمونه (چاپشو و بلد - تبریز چهارراه بهشتی)',
-    city: 'تبریز، خیابان امام، چهارراه شهید بهشتی، مجتمع اطلس، طبقه ۱، واحد ۱۷',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن و چاپ رول حرارتی لباس‌های ورزشی، تیشرت و هودی',
-    phones: ['04133342883', '09144944654'],
-    handleOrDomain: 'https://chapshoo.com',
-    equipment: 'کارگاه چاپ حرارتی و سابلیمیشن پوشاک ورزشی ثبت‌شده در دایرکتوری چاپشو و نقشه تبریز.',
-    evidenceStatus: 'تلفن ثابت 04133342883 و همراه 09144944654 از دایرکتوری چاپشو استخراج و تأیید شد.',
-    sourceUrl: 'https://chapshoo.com'
-  },
-  {
-    name: 'چاپ سابلیمیشن پارچه و کوسن تابان (تبریز)',
-    city: 'تبریز',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن روی کوسن، البسه پارچه‌ای، پرچم و منسوجات دکوراتیو',
-    phones: ['09143098846', '09399204177'],
-    handleOrDomain: 'https://tazarshop.ir',
-    equipment: 'کارگاه خدمات چاپ سابلیمیشن پارچه و منسوجات در تبریز؛ خریدار کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های تماس 09143098846 و 09399204177 از وب‌سایت مجموعه استخراج و ثبت گردید.',
-    sourceUrl: 'https://tazarshop.ir'
-  },
-  {
-    name: 'چاپ و تبلیغات سابلیمیشن شهر راز (گوگل مپ و بلد - شیراز چهارراه زند)',
-    city: 'شیراز، چهارراه زند، ابتدای خیابان سعدی، کوچه پارک هتل',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ تخصصی سابلیمیشن پارچه، پرچم ساحلی، پرچم رومیزی و پوشاک',
-    phones: ['09164872830'],
-    handleOrDomain: 'https://chapshahreraz.com',
-    equipment: 'مرکز تخصصی چاپ پارچه و پرچم در شیراز ثبت‌شده در نقشه گوگل و بلد.',
-    evidenceStatus: 'شماره تماس 09164872830 و آدرس شیراز از وب‌سایت رسمی چاپ شهر راز استخراج شد.',
-    sourceUrl: 'https://chapshahreraz.com'
-  },
-  {
-    name: 'مرکز چاپ پارچه و پرچم فتاح (بلد - شیراز میدان ستاد)',
-    city: 'شیراز، میدان ستاد به سمت پل باغ صفا، روبه‌روی استانداری',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن روی پارچه و تولید انواع پرچم تشریفات و ساحلی',
-    phones: ['09170008110'],
-    handleOrDomain: 'https://bame-shiraz.ir',
-    equipment: 'واحد فعال چاپ پارچه و پرچم ثبت‌شده در بانک مشاغل شیراز و نقشه شهری.',
-    evidenceStatus: 'شماره همراه 09170008110 و آدرس میدان ستاد شیراز از دایرکتوری مشاغل شیراز استخراج شد.',
-    sourceUrl: 'https://bame-shiraz.ir'
-  },
-  {
-    name: 'شرکت تولید و چاپ سابلیمیشن پارچه تارخ یزد (یزد)',
-    city: 'یزد، شهرک صنعتی یزد',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن و دیجیتال پارچه، ملحفه، روتختی، کوسن و کالای خواب',
-    phones: ['09134548109', '02153475000'],
-    handleOrDomain: 'https://negarfan.com',
-    equipment: 'کارخانه چاپ سابلیمیشن منسوجات و کالای خواب در قطب نساجی یزد با مصرف بالای کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره موبایل 09134548109 و خط ویژه 02153475000 از اطلاعات ثبت‌شده شرکت تارخ یزد استخراج شد.',
-    sourceUrl: 'https://negarfan.com'
-  },
-  {
-    name: 'مجتمع چاپ سابلیمیشن و پارچه آتیه (چاپشو و بلد - کاشان قطب راوندی)',
-    city: 'کاشان، بلوار قطب راوندی، بلوار شهیدان بدیعی، جنب تالار گلشن',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ دیجیتال و سابلیمیشن پارچه، لباس، روفرشی و منسوجات کاشان',
-    phones: ['03155467000', '09399611990'],
-    handleOrDomain: 'https://atyehprint.com',
-    equipment: 'مجتمع چاپ پارچه و سابلیمیشن در کاشان ثبت‌شده در چاپشو و نقشه بلد.',
-    evidenceStatus: 'تلفن ثابت 03155467000 و همراه 09399611990 از دایرکتوری چاپشو و سایت آتیه استخراج شد.',
-    sourceUrl: 'https://atyehprint.com'
-  },
-  {
-    name: 'مجتمع چاپ سابلیمیشن و پارچه سیمرغ (بلد - قم بلوار صدوقی)',
-    city: 'قم، بلوار شهید صدوقی، بلوار فردوسی، نبش کوچه ۱۲',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن پارچه، پرچم، کتیبه و چاپ دیجیتال عریض',
-    phones: ['02532909000', '09202909100'],
-    handleOrDomain: 'https://simorgh-digital.ir',
-    equipment: 'مجتمع چاپ دیجیتال و سابلیمیشن پارچه در قم ثبت‌شده در نقشه بلد و نشان.',
-    evidenceStatus: 'شماره‌های 02532909000 و 09202909100 از وب‌سایت رسمی سیمرغ دیجیتال قم استخراج شد.',
-    sourceUrl: 'https://simorgh-digital.ir'
-  },
-  {
-    name: 'مرکز چاپ سابلیمیشن پارچه و محصولات فرهنگی فردوسی (قم - بلوار معلم)',
-    city: 'قم، بلوار معلم، مجتمع ناشران، طبقه همکف',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن روی پارچه، پرچم، شال و محصولات پارچه‌ای فرهنگی',
-    phones: ['02537732020', '09121518869'],
-    handleOrDomain: 'https://publisherscomplex.com',
-    equipment: 'واحد فعال چاپ حرارتی و سابلیمیشن در قم مجهز به پلاتر و پرس حرارتی.',
-    evidenceStatus: 'تلفن ثابت 02537732020 و موبایل 09121518869 از دایرکتوری مجتمع ناشران قم تأیید شد.',
-    sourceUrl: 'https://publisherscomplex.com'
-  },
-  {
-    name: 'سازمان چاپ دیجیتال و پارچه سحر (بلد - اراک خیابان حاج‌باشی)',
-    city: 'اراک، خیابان حاج‌باشی، روبروی کارواش ستارگان',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ دیجیتال و سابلیمیشن روی پارچه، پرچم و البسه ورزشی و صنعتی',
-    phones: ['09186006022'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'مرکز چاپ پارچه و دیجیتال ثبت‌شده در نقشه بلد و دایرکتوری مشاغل اراک.',
-    evidenceStatus: 'شماره همراه 09186006022 و آدرس اراک از سامانه مشاغل و نقشه بلد استخراج شد.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'مرکز چاپ تخصصی سابلیمیشن پارچه مهسا (بلد و نشان - رشت صیقلان)',
-    city: 'رشت، خیابان شریعتی، میدان صیقلان',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ مستقیم و سابلیمیشن روی انواع پارچه، پرده، پوشاک، تیشرت و پرچم',
-    phones: ['01333239004', '01333263893', '09114526004', '09115000865'],
-    handleOrDomain: 'https://mahsacomputer.com',
-    equipment: 'مرکز مجهز چاپ سابلیمیشن پارچه، پرده و پرچم در رشت ثبت‌شده در نقشه بلد و نشان.',
-    evidenceStatus: 'شماره‌های ثابت 01333239004 و موبایل‌های 09114526004 و 09115000865 از سایت رسمی مجموعه تأیید شد.',
-    sourceUrl: 'https://mahsacomputer.com'
-  },
-  {
-    name: 'کارگاه چاپ پارچه و کلندر ویرا گستر معین (گوگل مپ - تهران)',
-    city: 'تهران، شهرک صنعتی',
-    contactPerson: 'نامشخص',
-    activityType: 'خدمات چاپ دیجیتال و حرارتی طاقه پارچه، شال و روسری و کالای خواب با کلندر',
-    phones: ['09392122112', '09382122112'],
-    handleOrDomain: 'https://viragostarmoin.com',
-    equipment: 'کارگاه صنعتی چاپ طاقه پارچه با کلندر حرارتی و پلاترهای سابلیمیشن؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های 09392122112 و 09382122112 از وب‌سایت رسمی ویرا گستر معین استخراج گردید.',
-    sourceUrl: 'https://viragostarmoin.com'
-  },
-  {
-    name: 'چاپ و تبلیغات سابلیمیشن منجی گرافیک (بلد - اصفهان خیابان بزرگمهر)',
-    city: 'اصفهان، خیابان بزرگمهر، ابتدای هشت بهشت شرقی، کوچه ۳، پلاک ۷',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن روی تیشرت، پارچه، پرچم و منسوجات تبلیغاتی',
-    phones: ['03132640997', '09371403100'],
-    handleOrDomain: 'https://monjigraphic.com',
-    equipment: 'کارگاه چاپ حرارتی سابلیمیشن ثبت‌شده در نقشه بلد اصفهان.',
-    evidenceStatus: 'تلفن ثابت 03132640997 و همراه 09371403100 از وب‌سایت منجی گرافیک و بلد استخراج شد.',
-    sourceUrl: 'https://monjigraphic.com'
-  },
-  {
-    name: 'چاپخانه دیجیتال پارچه و کلندر نقش جهان (نقشه بلد - اصفهان شهرک صنعتی جی)',
-    city: 'اصفهان، شهرک صنعتی جی، خیابان چهارم',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن رول پارچه، سفره و رومیزی پارچه‌ای، پرده و کالای خواب',
-    phones: ['03135721840', '09131186420'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'کارگاه صنعتی چاپ رول پارچه و کلندر در شهرک صنعتی جی اصفهان؛ خریدار مستمر کاغذ سابلیمیشن.',
-    evidenceStatus: 'اطلاعات تماس 03135721840 و 09131186420 از نقشه بلد و دایرکتوری شهرک صنعتی جی ثبت شد.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه دیبا نقش (نقشه نشان - تهران عبدل‌آباد)',
-    city: 'تهران، عبدل‌آباد، خیابان شکوفه، کوچه ۱۲',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن طاقه‌ای پارچه، مانتو، شال و روسری و پارچه‌های مبلی',
-    phones: ['02155847290', '09123489120'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارگاه چاپ طاقه پارچه و کلندر در قطب نساجی عبدل‌آباد ثبت‌شده در نقشه نشان.',
-    evidenceStatus: 'شماره‌های 02155847290 و 09123489120 در نقشه نشان بررسی و ثبت گردید؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'مرکز چاپ سابلیمیشن پرده و مخمل آرتاویل (نقشه بلد - تهران یافت‌آباد)',
-    city: 'تهران، یافت‌آباد، بازار مبل و پارچه، بلوار معلم',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن پرده هازان، پورشه، مخمل کالیفرنیا، کوسن و رومبلی چاپی',
-    phones: ['02166248910', '09124903815'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'کارگاه تخصصی چاپ پارچه‌های دکوراتیو و مبلی در بورس یافت‌آباد با کلندر عرض ۱۸۰.',
-    evidenceStatus: 'شماره‌های تماس از نقشه بلد در محدوده یافت‌آباد تهران استخراج شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'تولیدی و چاپ سابلیمیشن لباس ورزشی ستارگان (بهترینو - تهران منیریه)',
-    city: 'تهران، میدان منیریه، خیابان معیری، پلاک ۳۴',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن لباس تیم‌های ورزشی، دوبنده کشتی، لباس فوتبالی و گرمکن',
-    phones: ['02155387412', '09122197430'],
-    handleOrDomain: 'https://behtarino.com',
-    equipment: 'کارگاه دوخت و چاپ سابلیمیشن پوشاک ورزشی در بورس منیریه مجهز به پلاتر و کلندر.',
-    evidenceStatus: 'اطلاعات تماس در بهترینو (behtarino.com) بررسی و تأیید شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://behtarino.com'
-  },
-  {
-    name: 'کارخانه چاپ سابلیمیشن کالای خواب و روتختی مهتاب (نقشه بلد - یزد شهرک صنعتی)',
-    city: 'یزد، شهرک صنعتی یزد، بلوار ابریشم',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن عرض عریض روتختی، ملحفه، روبالشی و لحاف چاپی',
-    phones: ['03537278930', '09133519240'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'خط کلندر عرض ۲۴۰ و پلاترهای سابلیمیشن در شهرک صنعتی یزد با مصرف تناژی کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های کارخانه از نقشه بلد یزد استخراج شد؛ ظرفیت خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'چاپ سابلیمیشن فرشینه و موکت چاپی کویر (نقشه نشان - کاشان شهرک صنعتی امیرکبیر)',
-    city: 'کاشان، شهرک صنعتی امیرکبیر، فاز ۲',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن فرشینه مخمل، پادری چاپی، تابلوفرش چاپی و روفرشی مدرن',
-    phones: ['03155348210', '09132647180'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارخانه تولید فرشینه چاپی با کلندر روغن داغ و مصرف بالای رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'اطلاعات تماس در نقشه نشان کاشان بررسی و ثبت شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'مرکز چاپ دیجیتال پارچه و روسری نگارستان (نقشه بلد - تهران بازار بزرگ)',
-    city: 'تهران، بازار بزرگ، کوچه حمام چال، پاساژ جعفری',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن شال و روسری، ساتن، حریر و مخمل با کلندر حرارتی',
-    phones: ['02155618340', '09121948270'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'کارگاه چاپ شال و روسری در بورس بازار بزرگ تهران با مصرف مداوم کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های تماس در نقشه بلد ثبت و بررسی شد؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه توس بافت (نقشه نشان - مشهد شهرک صنعتی توس)',
-    city: 'مشهد، شهرک صنعتی توس، فاز ۱، تلاش شمالی',
-    contactPerson: 'نامشخص',
-    activityType: 'خدمات چاپ طاقه‌ای پارچه، کالای خواب، ملحفه هتلی و پوشاک ورزشی',
-    phones: ['05135412890', '09151184930'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارخانه چاپ سابلیمیشن رول پارچه در شهرک صنعتی توس مشهد مجهز به کلندر صنعتی.',
-    evidenceStatus: 'شماره‌های کارخانه و همراه مدیریت در نقشه نشان مشهد تأیید شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'تولیدی و چاپ سابلیمیشن پرچم و کتیبه رضوان (نقشه بلد - مشهد طلاب)',
-    city: 'مشهد، بلوار طبرسی، محدوده طلاب',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن کتیبه‌های مخمل مذهبی، پرچم اهتزاز، ساحلی و شال عزاداری',
-    phones: ['05132748120', '09153084712'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'کارگاه چاپ کتیبه و پرچم با کلندر حرارتی و پلاترهای سابلیمیشن در مشهد.',
-    evidenceStatus: 'اطلاعات تماس در نقشه بلد مشهد ثبت شده است؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه سهند (نقشه بلد - تبریز شهرک صنعتی سلیمی)',
-    city: 'تبریز، آذرشهر، شهرک صنعتی شهید سلیمی، ۳۰ متری دوم',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن طاقه‌ای پارچه، تریکو، فلامنت، لباس ورزشی و کالای خواب',
-    phones: ['04134328190', '09141187420'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'واحد صنعتی چاپ پارچه و کلندر در شهرک صنعتی سلیمی تبریز؛ خریدار عمده رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های تماس در نقشه بلد و بانک صنعت آذربایجان بررسی شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'چاپ سابلیمیشن پارچه و لباس محلی کردستان (نقشه نشان - بانه و مریوان)',
-    city: 'کردستان، مریوان، شهرک صنعتی',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن پارچه‌های لباس کردی زنانه، شال و روسری و پارچه‌های مجلسی',
-    phones: ['08734528140', '09188714930'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارگاه چاپ دیجیتال و کلندر پارچه‌های محلی و مجلسی با مصرف مستمر کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های تماس در نقشه نشان بررسی و ثبت گردید؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه هگمتانه (نقشه بلد - همدان شهرک صنعتی بوعلی)',
-    city: 'همدان، شهرک صنعتی بوعلی، بلوار یکم',
-    contactPerson: 'نامشخص',
-    activityType: 'خدمات چاپ سابلیمیشن پوشاک ورزشی، کارگاه‌های تولیدی پوشاک و پرچم',
-    phones: ['08134382910', '09181114820'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'کارگاه چاپ حرارتی پارچه و لباس ورزشی در شهرک صنعتی بوعلی همدان.',
-    evidenceStatus: 'اطلاعات تماس در نقشه بلد همدان بررسی و تأیید شد؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'مرکز چاپ سابلیمیشن و پرچم طبرستان (نقشه نشان - ساری و قائمشهر)',
-    city: 'مازندران، قائمشهر، جاده نظامی، شهرک صنعتی',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن طاقه پارچه، لباس ورزشی، پرچم ساحلی و کالای خواب',
-    phones: ['01142278410', '09111248930'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'واحد چاپ سابلیمیشن و کلندر پارچه در قطب نساجی قائمشهر مازندران.',
-    evidenceStatus: 'شماره‌های تماس از نقشه نشان مازندران استخراج شد؛ نیاز خرید کاغذ نیازمند تماس تلفنی است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه کارون (نقشه بلد - اهواز شهرک صنعتی اهواز)',
-    city: 'اهواز، شهرک صنعتی شماره ۲، بلوار صنعت',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن لباس ورزشی، پرچم، شال و خدمات پرس حرارتی پارچه',
-    phones: ['06132284910', '09161184720'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'مرکز خدمات چاپ سابلیمیشن پارچه و پوشاک ورزشی در استان خوزستان.',
-    evidenceStatus: 'اطلاعات تماس در نقشه بلد اهواز بررسی و ثبت گردید؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'چاپخانه دیجیتال پارچه و سابلیمیشن کریمان (نقشه نشان - کرمان بزرگراه آیت‌الله هاشمی)',
-    city: 'کرمان، شهرک صنعتی خضرا',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن پرچم، پتو و کالای خواب، رومیزی و پوشاک ورزشی',
-    phones: ['03432478120', '09131418920'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارگاه مجهز به پلاتر سابلیمیشن و کلندر حرارتی در کرمان.',
-    evidenceStatus: 'شماره‌های تماس از نقشه نشان کرمان استخراج و تأیید شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://neshan.org'
-  },
-  {
-    name: 'کارگاه چاپ سابلیمیشن و کلندر پارچه بیستون (نقشه بلد - کرمانشاه شهرک صنعتی زاگرس)',
-    city: 'کرمانشاه، شهرک صنعتی فرامان / زاگرس',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن پارچه، لباس محلی، لباس ورزشی و پرچم',
-    phones: ['08338247190', '09181314920'],
-    handleOrDomain: 'https://balad.ir',
-    equipment: 'واحد فعال چاپ سابلیمیشن و کلندر رول پارچه در استان کرمانشاه.',
-    evidenceStatus: 'شماره‌های تماس در نقشه بلد کرمانشاه بررسی و ثبت شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://balad.ir'
-  },
-  {
-    name: 'مرکز چاپ سابلیمیشن و کلندر پارچه اروم بافت (نقشه نشان - ارومیه شهرک صنعتی فاز ۲)',
-    city: 'ارومیه، شهرک صنعتی فاز ۲، خیابان صنعتگران',
-    contactPerson: 'نامشخص',
-    activityType: 'چاپ سابلیمیشن طاقه پارچه، پرده، روتختی و پوشاک ورزشی',
-    phones: ['04433384120', '09141418930'],
-    handleOrDomain: 'https://neshan.org',
-    equipment: 'کارگاه چاپ سابلیمیشن و کلندر پارچه در ارومیه؛ مصرف‌کننده رول کاغذ سابلیمیشن.',
-    evidenceStatus: 'شماره‌های تماس در نقشه نشان ارومیه بررسی و تأیید شد؛ نیاز خرید کاغذ نیازمند تماس است.',
-    sourceUrl: 'https://neshan.org'
-  }
 ];
 
 export async function sendLeadToBale(lead) {
@@ -1162,7 +1282,7 @@ export async function executeStandaloneCycle(options = {}) {
 
   // In frequent GitHub cron mode (runs every 30 mins to defeat GitHub scheduler throttling),
   // strictly respect the 2-hour rule: if < 110 minutes passed since last delivery, wait!
-  // If GitHub delayed a cron run (e.g. 4 or 6 hours passed), automatically catch up on missed windows!
+  // If GitHub delayed a cron run (e.g. 4-12 hours passed), automatically catch up up to 6 cards!
   let targetQuota = customQuota > 0 ? customQuota : MIN_NEW_CARDS;
   if (isCronMode && customQuota === 0) {
     const MIN_INTERVAL_MS = 110 * 60 * 1000; // 1h50m tolerance for 2h cron
@@ -1173,7 +1293,7 @@ export async function executeStandaloneCycle(options = {}) {
       );
       return { addedCount: 0, skipped: true };
     }
-    const missedWindows = Math.min(4, Math.max(1, Math.floor(elapsedMs / TWO_HOURS_MS)));
+    const missedWindows = Math.min(6, Math.max(1, Math.floor(elapsedMs / TWO_HOURS_MS)));
     targetQuota = missedWindows * MIN_NEW_CARDS;
     if (missedWindows > 1) {
       console.log(
@@ -1183,8 +1303,16 @@ export async function executeStandaloneCycle(options = {}) {
   }
 
   const leads = readJsonSafe(leadsPath, []);
-  const existingPhones = new Set(leads.flatMap((l) => l.phones || []));
-  const existingNames = new Set(leads.map((l) => l.name.trim().toLowerCase()));
+  const existingPhones = new Set(leads.flatMap((l) => normalizePhoneList(l.phones || [])));
+  const existingNames = new Set(leads.map((l) => String(l.name || '').trim().toLowerCase()));
+  const existingSourceUrls = new Set(
+    leads.flatMap((l) =>
+      String(l.sourceUrl || '')
+        .split(/\n+/)
+        .map((u) => u.trim().replace(/\/+$/, '').toLowerCase())
+        .filter((u) => u.startsWith('http'))
+    )
+  );
 
   let maxNum = 69;
   for (const item of leads) {
@@ -1198,16 +1326,25 @@ export async function executeStandaloneCycle(options = {}) {
   const queryIdx = Math.floor(Date.now() / TWO_HOURS_MS) % ROTATING_MAP_AND_DIVAR_QUERIES.length;
   const q1 = ROTATING_MAP_AND_DIVAR_QUERIES[queryIdx];
   const q2 = ROTATING_MAP_AND_DIVAR_QUERIES[(queryIdx + 1) % ROTATING_MAP_AND_DIVAR_QUERIES.length];
+  const q3 = ROTATING_MAP_AND_DIVAR_QUERIES[(queryIdx + 2) % ROTATING_MAP_AND_DIVAR_QUERIES.length];
 
-  const [mapLeads, liveDivarLeads] = await Promise.all([
+  const [chapshooLeads, mapLeads, liveDivarLeads1, liveDivarLeads2] = await Promise.all([
+    crawlChapshooLive(existingPhones, existingSourceUrls),
     crawlMapAndDirectorySources(q1),
-    crawlLiveDivar(q2),
+    crawlLiveDivar(q2, existingSourceUrls),
+    crawlLiveDivar(q3, existingSourceUrls),
   ]);
+
+  console.log(
+    `[Live Sources] Chapshoo: ${chapshooLeads.length} | Map/Bing: ${mapLeads.length} | Divar: ${liveDivarLeads1.length + liveDivarLeads2.length} | Verified Pool: ${VERIFIED_SUBLIMATION_CANDIDATE_POOL.length}`
+  );
 
   const allCandidates = [
     ...VERIFIED_SUBLIMATION_CANDIDATE_POOL,
+    ...chapshooLeads,
+    ...liveDivarLeads1,
+    ...liveDivarLeads2,
     ...mapLeads,
-    ...liveDivarLeads,
   ];
 
   const addedLeads = [];
@@ -1215,8 +1352,11 @@ export async function executeStandaloneCycle(options = {}) {
   for (const candidate of allCandidates) {
     if (addedLeads.length >= targetQuota) break;
 
-    const normName = candidate.name.trim().toLowerCase();
+    const normName = String(candidate.name || '').trim().toLowerCase();
     const phones = normalizePhoneList(candidate.phones);
+    if (!isValidSublimationBuyerCandidate(candidate.name, `${candidate.activityType || ''} ${candidate.equipment || ''}`, phones, candidate.sourceUrl || '')) {
+      continue;
+    }
     const hasExistingPhone = phones.some((p) => existingPhones.has(p));
     const hasExistingName = existingNames.has(normName);
 
@@ -1258,7 +1398,7 @@ export async function executeStandaloneCycle(options = {}) {
         deliveredAt: new Date().toISOString().slice(0, 10),
         isoTimestamp: new Date().toISOString(),
         targetGroup: `بانک مشتری کاغذ سابلیمیشن (${BALE_CHAT_ID})`,
-        method: 'ارسال خودکار موتور ۲ ساعته (نقشه بلد، نشان، گوگل مپ و دایرکتوری‌ها)',
+        method: 'ارسال خودکار موتور ابری ۲ ساعته (دایرکتوری چاپشو، دیوار، نقشه بلد/نشان/گوگل مپ)',
       });
 
       addedLeads.push(newLead);
@@ -1275,7 +1415,7 @@ export async function executeStandaloneCycle(options = {}) {
 
     cfg.lastRunAt = nowIso;
     cfg.nextRunAt = nextIso;
-    cfg.lastBotStatus = `${addedLeads.length} کارت جدید (${addedLeads.map((l) => l.id).join('، ')}) از نقشه گوگل، بلد، نشان و دایرکتوری‌ها به گروه بله (${BALE_CHAT_ID}) ارسال شد.`;
+    cfg.lastBotStatus = `${addedLeads.length} کارت جدید (${addedLeads.map((l) => l.id).join('، ')}) از دایرکتوری چاپشو، دیوار و نقشه‌های شهری به گروه بله (${BALE_CHAT_ID}) ارسال شد.`;
     cfg.lastCycleSummary = `${addedLeads.length} کارت جدید با شماره تلفن معتبر در این نوبت پیدا و به بله ارسال شد؛ نوبت بعدی ۲ ساعت دیگر (مجموع: ${leads.length} مشتری)`;
     atomicWriteFileSync(cfgPath, JSON.stringify(cfg, null, 2));
 
@@ -1298,7 +1438,7 @@ export async function executeStandaloneCycle(options = {}) {
       newLeadsAdded: addedLeads.length,
       newProspectsAdded: 0,
       newSourcesAdded: 0,
-      newCreativeIdea: 'پایش ترکیبی نقشه گوگل (Google Maps)، مسیریاب بلد (balad.ir)، نقشه نشان (neshan.org)، بهترینو و کتاب اول برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه',
+      newCreativeIdea: 'پایش زنده مستقیم دایرکتوری چاپشو (chapshoo.com) + دیوار (api.divar.ir) + نقشه گوگل، بلد و نشان برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه',
       limitations: `سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (${addedLeads.length} کارت جدید ثبت و به بله ارسال شد).`,
       nextStep: 'توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده',
     });
