@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0023",
+    "timestamp": "2026-11-17T02:20:49.636Z",
+    "isoTimestamp": "2026-11-17T02:20:49.636Z",
+    "targetCity": "ایران و ایران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/123-chap/",
+      "https://chapshoo.com/ad/chap-arivan/"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده مستقیم دایرکتوری چاپشو (chapshoo.com) + دیوار (api.divar.ir) + نقشه گوگل، بلد و نشان برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0022",
     "timestamp": "2026-11-15T09:47:43.883Z",
     "isoTimestamp": "2026-11-15T09:47:43.883Z",
