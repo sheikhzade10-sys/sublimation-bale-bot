@@ -1,5 +1,22 @@
 [
   {
+    "cycleId": "CYCLE-0024",
+    "timestamp": "2026-11-18T02:11:32.647Z",
+    "isoTimestamp": "2026-11-18T02:11:32.647Z",
+    "targetCity": "ایران و ایران و ایران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/naghsh-afarinan-chalak/",
+      "https://chapshoo.com/ad/chap-mahoor/",
+      "https://chapshoo.com/ad/tablighat-ava/"
+    ],
+    "newLeadsAdded": 3,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده مستقیم دایرکتوری چاپشو (chapshoo.com) + دیوار (api.divar.ir) + نقشه گوگل، بلد و نشان برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (3 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0023",
     "timestamp": "2026-11-17T02:20:49.636Z",
     "isoTimestamp": "2026-11-17T02:20:49.636Z",
