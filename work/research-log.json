@@ -1,5 +1,20 @@
 [
   {
+    "cycleId": "CYCLE-0025",
+    "timestamp": "2026-11-18T10:31:01.644Z",
+    "isoTimestamp": "2026-11-18T10:31:01.644Z",
+    "targetCity": "ایران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/aram-print/"
+    ],
+    "newLeadsAdded": 1,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده مستقیم دایرکتوری چاپشو (chapshoo.com) + دیوار (api.divar.ir) + نقشه گوگل، بلد و نشان برای کشف کارگاه‌های چاپ سابلیمیشن و کلندر پارچه",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (1 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0024",
     "timestamp": "2026-11-18T02:11:32.647Z",
     "isoTimestamp": "2026-11-18T02:11:32.647Z",
