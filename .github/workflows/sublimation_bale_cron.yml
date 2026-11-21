@@ -2,8 +2,10 @@ name: 24/7 Sublimation Leads Cron to Bale
 
 on:
   schedule:
-    # Triggers every 30 minutes on GitHub Cloud; standalone-worker.mjs enforces the strict 2-hour rule & catches up if GitHub delays a runner
-    - cron: '*/30 * * * *'
+    # Off-peak minutes (:17 and :47) avoid GitHub top-of-hour/half-hour queue congestion.
+    # standalone-worker.mjs enforces the strict 2-hour rule and catches up automatically if GitHub delays a runner.
+    - cron: '17 */2 * * *'
+    - cron: '47 1-23/2 * * *'
   workflow_dispatch: # Allows manual trigger anytime
 
 permissions:
@@ -12,8 +14,9 @@ permissions:
 jobs:
   run-sublimation-bale:
     runs-on: ubuntu-24.04
+    timeout-minutes: 8
     steps:
-      - name: Run Sublimation Map & Directory Discovery & Bale Delivery
+      - name: Run Multi-Source Sublimation Discovery (Balad Map + Chapshoo + Divar + Aparat) & Bale Delivery
         env:
           BALE_BOT_TOKEN: '2136077232:6UYkuEA0H6FyPXbZB0lH38Hy1GjKpojSsv8'
           BALE_CHAT_ID: '4657775638'
@@ -28,4 +31,4 @@ jobs:
           git config user.name "Sublimation Cloud Bot"
           git config user.email "bot@sublimation.ir"
           git add work/ || true
-          git diff --staged --quiet || (git commit -m "chore: auto-deliver new sublimation leads to Bale [skip ci]" && git pull --rebase origin main && git push origin main)
+          git diff --staged --quiet || (git commit -m "chore: auto-deliver new sublimation leads & advance crawler cursor [skip ci]" && git pull --rebase origin main && git push origin main)
