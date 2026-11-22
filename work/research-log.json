@@ -1,5 +1,27 @@
 [
   {
+    "cycleId": "CYCLE-0031",
+    "timestamp": "2026-11-22T08:53:52.527Z",
+    "isoTimestamp": "2026-11-22T08:53:52.527Z",
+    "targetCity": "شهرستان رباط کریم،شهرک صنعتی سبلان،خ بهاران،جاده شاهدشهر،خ بعثت و صباشهر،اورین،خ وحدت،خ صنعت دوم و شهرستان تهران،جاده گلدسته،خ مصطفی خمینی،خ شهید گردویی و چهاردانگه، شهرک گلشهر، بزرگراه شهید سعیدی و تهران، نصرت، خ کارگر شمالی، خ قدر، خ جمالزاده شمالی، پ ۴۱۲ و تهران،شهید رجایی،خ بختیاری و تهران و تبریز، کیلومتر ۱۲ جاده تهران، کندرود",
+    "sourcesChecked": [
+      "https://balad.ir/p/چاپ-پارچه-صوفی_printing-and-engraving-services-1uBn9j9xgbd9r0",
+      "https://balad.ir/p/مرکز-چاپ-پارچه_printing-and-engraving-services-7kNOeksCZGhIjl",
+      "https://balad.ir/p/چاپ-پارچه-کویین_manufacturer-and-producer-6kZFIBAgUXkGUp",
+      "https://balad.ir/p/کارخانه-پیله-تکس-چاپ-پارچه-رنگرزی-پارچه-chahar-dangeh_factory-3UBhVjjXyqVwGm",
+      "https://balad.ir/p/چاپ-دیجیتال-پارچه-کارو-tehran-nei-nosrat_printing-and-engraving-services-7ekT2iSIccY2pO",
+      "https://balad.ir/p/چاپ-روی-پارچه-دوراکو-tehran-nei-shahid-rajayi_printing-and-engraving-services-7eOrMOUanDSDMr",
+      "https://www.aparat.com/v/s55641c",
+      "https://balad.ir/p/مرکز-تخصصی-چاپ-پارچه-فرزبود-tabriz_printing-and-engraving-services-P6YJsrwO0q9a0U"
+    ],
+    "newLeadsAdded": 8,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (8 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0030",
     "timestamp": "2026-11-22T00:19:55.744Z",
     "isoTimestamp": "2026-11-22T00:19:55.744Z",
