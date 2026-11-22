@@ -1,5 +1,23 @@
 [
   {
+    "cycleId": "CYCLE-0033",
+    "timestamp": "2026-11-22T22:50:00.137Z",
+    "isoTimestamp": "2026-11-22T22:50:00.137Z",
+    "targetCity": "شهرستان ورامین، مصیری، خ خسروی، خ صنعت چهارم، خ پارس و شهرستان پاکدشت،جاده عباس آباد - کریم آباد،خ یاس دوم و شهرستان ری،بزرگراه امام رضا،جاده لپه زنک و شهرستان ری، قلعه شیخ، خ امام حسین بین شهدای مخابرات و مهربان",
+    "sourcesChecked": [
+      "https://balad.ir/p/چاپ-روی-پارچه-سیمارو-چاپ_factory-1lsYe1g0ZiaBSj",
+      "https://balad.ir/p/چاپ-پارچه-روماک_printing-and-engraving-services-7btENI3IQIJToj",
+      "https://balad.ir/p/چاپ-پارچه-گودرزی_printing-and-engraving-services-33wwRLYkKtRs7N",
+      "https://balad.ir/p/چاپ-پارچه-آبانتکس_printing-and-engraving-services-6zKNCadlB5DxkJ"
+    ],
+    "newLeadsAdded": 4,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (4 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0032",
     "timestamp": "2026-11-22T17:25:54.495Z",
     "isoTimestamp": "2026-11-22T17:25:54.495Z",
