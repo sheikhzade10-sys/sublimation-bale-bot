@@ -1,5 +1,23 @@
 [
   {
+    "cycleId": "CYCLE-0030",
+    "timestamp": "2026-11-22T00:19:55.744Z",
+    "isoTimestamp": "2026-11-22T00:19:55.744Z",
+    "targetCity": "شهرستان قم، بلوار بنکداران و ایران و اهواز،شهرک رزمندگان،بلوار هاشمی،بلوار بیست دو بهمن و اهواز، اتوبان گلستان، خیابان 22 بهمن، ناحیه صنعتی 22 بهمن، خیابان فناوران پلاک 108",
+    "sourcesChecked": [
+      "https://balad.ir/p/چاپ-پارچه-میرزایی_printing-and-engraving-services-6oOpqkytNWtmVw",
+      "https://chapshoo.com/ad/parcham-pasargad/",
+      "https://balad.ir/p/فابریک-چاپ،-چاپ-روی-پارچه-(سابلیمیشن)-چاپ-کتیبه-ahvaz_printing-and-engraving-services-6SMk0FAursW56R",
+      "https://balad.ir/p/چاپ-پارچه-کاچیلا-ahvaz_printing-and-engraving-services-53YGJtcyjhQrTj"
+    ],
+    "newLeadsAdded": 4,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (4 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0029",
     "timestamp": "2026-11-21T20:03:37.021Z",
     "isoTimestamp": "2026-11-21T20:03:37.021Z",
