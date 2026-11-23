@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0037",
+    "timestamp": "2026-11-23T20:12:41.629Z",
+    "isoTimestamp": "2026-11-23T20:12:41.629Z",
+    "targetCity": "ایران و ارومیه",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/dyense/",
+      "https://chapshoo.com/ad/sadeghi-embroidery-and-printing-urmia/"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0036",
     "timestamp": "2026-11-23T16:31:37.785Z",
     "isoTimestamp": "2026-11-23T16:31:37.785Z",
