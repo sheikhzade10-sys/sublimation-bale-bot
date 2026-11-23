@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0035",
+    "timestamp": "2026-11-23T07:34:45.922Z",
+    "isoTimestamp": "2026-11-23T07:34:45.922Z",
+    "targetCity": "تهران، کوی نصر(گیشا)، کوی نصر بین بیستم و علیالی، پ ۱۷۳ و تهران، سنگلج (شاپور)، خ شهید مغفوری، خ لاله، خ شهید مجتبی صادقی، پ ۲۱",
+    "sourcesChecked": [
+      "https://balad.ir/p/دستگاه-چاپ-سابلیمیشن-هانی-ماگ_industrial-store-2ZKSZKsfrlM06Q",
+      "https://balad.ir/p/چاپ-سابلیمیشن-آقایی-tehran-nei-_printing-and-engraving-services-5vQbr1wEDQfVjs"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0034",
     "timestamp": "2026-11-23T04:02:17.867Z",
     "isoTimestamp": "2026-11-23T04:02:17.867Z",
