@@ -1,5 +1,20 @@
 [
   {
+    "cycleId": "CYCLE-0039",
+    "timestamp": "2026-11-24T14:19:21.355Z",
+    "isoTimestamp": "2026-11-24T14:19:21.355Z",
+    "targetCity": "ایران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/pars-print/"
+    ],
+    "newLeadsAdded": 1,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (1 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0038",
     "timestamp": "2026-11-24T03:30:05.904Z",
     "isoTimestamp": "2026-11-24T03:30:05.904Z",

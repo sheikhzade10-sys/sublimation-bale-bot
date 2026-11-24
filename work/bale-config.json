@@ -5,10 +5,10 @@
   "divarToken": "",
   "divarPhone": "",
   "botName": "@romina_admin_test_bot",
-  "lastBotStatus": "6 کارت جدید (SUB-0261، SUB-0262، SUB-0263، SUB-0264، SUB-0265، SUB-0266) از نقشه بلد، چاپشو، دیوار و آپارات به گروه بله (4657775638) ارسال شد.",
-  "lastRunAt": "2026-11-24T03:30:05.904Z",
-  "nextRunAt": "2026-11-24T05:30:05.904Z",
-  "lastCycleSummary": "6 کارت جدید با شماره تلفن معتبر در این نوبت پیدا و به بله ارسال شد؛ نوبت بعدی ۲ ساعت دیگر (مجموع: 266 مشتری)",
+  "lastBotStatus": "1 کارت جدید (SUB-0267) از نقشه بلد، چاپشو، دیوار و آپارات به گروه بله (4657775638) ارسال شد.",
+  "lastRunAt": "2026-11-24T14:19:21.355Z",
+  "nextRunAt": "2026-11-24T16:19:21.355Z",
+  "lastCycleSummary": "1 کارت جدید با شماره تلفن معتبر در این نوبت پیدا و به بله ارسال شد؛ نوبت بعدی ۲ ساعت دیگر (مجموع: 267 مشتری)",
   "githubRepoUrl": "https://github.com/sheikhzade10-sys/sublimation-bale-bot",
   "githubUsername": "sheikhzade10-sys"
 }
