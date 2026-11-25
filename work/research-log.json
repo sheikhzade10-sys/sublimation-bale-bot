@@ -1,5 +1,22 @@
 [
   {
+    "cycleId": "CYCLE-0041",
+    "timestamp": "2026-11-25T00:09:29.216Z",
+    "isoTimestamp": "2026-11-25T00:09:29.216Z",
+    "targetCity": "کرج،کوی فرهنگ،خ نسیم و کرج،اخگر آباد،جاده قزل حصار،خ نان شهر و کرج،مهرشر بلوار ارم-بلوار آزادی انتهای جهاد غربی",
+    "sourcesChecked": [
+      "https://balad.ir/p/تولیدی-لباس-ورزشی-نریمانی-karaj_manufacturer-and-producer-77uOOpWKD5ZvlK",
+      "https://balad.ir/p/تولیدی-لباس-ورزشی-آیدین-karaj_sporting-goods-store-6otuEr7EsAWDZT",
+      "https://balad.ir/p/تولیدی-لباس-ورزشی-هاکان-اسپرت-karaj_sporting-goods-store-1oyBDfMov98BjE"
+    ],
+    "newLeadsAdded": 3,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (3 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0040",
     "timestamp": "2026-11-24T17:41:13.519Z",
     "isoTimestamp": "2026-11-24T17:41:13.519Z",
