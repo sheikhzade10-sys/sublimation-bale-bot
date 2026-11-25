@@ -1,5 +1,20 @@
 [
   {
+    "cycleId": "CYCLE-0044",
+    "timestamp": "2026-11-25T14:19:52.734Z",
+    "isoTimestamp": "2026-11-25T14:19:52.734Z",
+    "targetCity": "شهرستان میاندوآب،جاده مرجان آباد،جاده ده منصور",
+    "sourcesChecked": [
+      "https://balad.ir/p/چاپ-تیشرت-فردین_clothing-store-57dpnQYScgY5Wk"
+    ],
+    "newLeadsAdded": 1,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (1 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0043",
     "timestamp": "2026-11-25T10:31:40.787Z",
     "isoTimestamp": "2026-11-25T10:31:40.787Z",
