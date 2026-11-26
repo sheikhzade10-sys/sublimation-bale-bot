@@ -1,8 +1,8 @@
 {
-  "baladIdx": 225,
-  "chapshooIdx": 20,
-  "divarIdx": 15,
-  "aparatIdx": 5,
+  "baladIdx": 243,
+  "chapshooIdx": 44,
+  "divarIdx": 1,
+  "aparatIdx": 1,
   "baladRecQueue": [],
   "checkedKeys": [
     "divar:galOJ6E4",
@@ -1870,7 +1870,25 @@
     "divar:ga6EXAal",
     "divar:wZ33EYhJ",
     "divar:waHc7jCJ",
-    "balad:PNqTVIsqogJ5YE"
+    "balad:PNqTVIsqogJ5YE",
+    "divar:waBgGX8g",
+    "divar:gagvJCPG",
+    "chapshoo:negin-ara-cover",
+    "chapshoo:akam-naghsh-manzar",
+    "chapshoo:chap-amir-official",
+    "chapshoo:kaghaz-forosh",
+    "chapshoo:soida-malzoomat",
+    "balad:7qa2n5imXIvHt8",
+    "chapshoo:cellophane-packaging",
+    "chapshoo:double-sided-adhesive-for-cliches",
+    "chapshoo:tablet-and-statue",
+    "chapshoo:diacoled",
+    "chapshoo:giclee",
+    "chapshoo:atlas-kanoon",
+    "chapshoo:sepas-print-bro",
+    "chapshoo:newchap-tandis",
+    "chapshoo:mishar-ads",
+    "chapshoo:jarchi-ads"
   ],
-  "updatedAt": "2026-11-26T10:52:38.189Z"
+  "updatedAt": "2026-11-26T15:49:30.101Z"
 }
