@@ -1,13 +1,9 @@
 {
-  "baladIdx": 186,
-  "chapshooIdx": 115,
-  "divarIdx": 2,
-  "aparatIdx": 2,
+  "baladIdx": 189,
+  "chapshooIdx": 118,
+  "divarIdx": 3,
+  "aparatIdx": 3,
   "baladRecQueue": [
-    "2jqif1WrJ1Etpe",
-    "320q6ZrlAzdhrE",
-    "1nXse40ugAl8FS",
-    "5R0tCJ9HmDNYwO",
     "5oSVQnZtz7budA",
     "4UBd1Z07smLe2L",
     "3SX0Rhb6JCkzud",
@@ -1751,7 +1747,26 @@
     "chapshoo:round-clock-digital-printing",
     "chapshoo:valiasr-digital-printing",
     "chapshoo:gisha-digital-print",
-    "chapshoo:ghaem-magham-digital-print"
+    "chapshoo:ghaem-magham-digital-print",
+    "balad:2jqif1WrJ1Etpe",
+    "balad:320q6ZrlAzdhrE",
+    "balad:1nXse40ugAl8FS",
+    "balad:5R0tCJ9HmDNYwO",
+    "chapshoo:ghazal-tarsim",
+    "chapshoo:airex",
+    "chapshoo:jahan-graphic",
+    "chapshoo:shahre-chap-online",
+    "chapshoo:lidanco",
+    "chapshoo:sahar-flag",
+    "chapshoo:digi-print-basirat",
+    "chapshoo:persian-graphic",
+    "chapshoo:ava-graphic",
+    "chapshoo:dehghan-chap",
+    "chapshoo:chap-center",
+    "chapshoo:tehran-printing-housee",
+    "chapshoo:tik-taak-graphic",
+    "chapshoo:sarzamin-chap",
+    "chapshoo:asrar-danesh"
   ],
-  "updatedAt": "2026-11-25T20:41:16.106Z"
+  "updatedAt": "2026-11-26T00:19:18.092Z"
 }
