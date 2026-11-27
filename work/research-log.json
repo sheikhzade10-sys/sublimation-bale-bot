@@ -1,5 +1,20 @@
 [
   {
+    "cycleId": "CYCLE-0049",
+    "timestamp": "2026-11-27T01:10:45.247Z",
+    "isoTimestamp": "2026-11-27T01:10:45.247Z",
+    "targetCity": "ایران",
+    "sourcesChecked": [
+      "https://www.aparat.com/v/j9DC1"
+    ],
+    "newLeadsAdded": 1,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (1 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0048",
     "timestamp": "2026-11-26T21:29:56.129Z",
     "isoTimestamp": "2026-11-26T21:29:56.129Z",
