@@ -1,8 +1,8 @@
 {
-  "baladIdx": 351,
-  "chapshooIdx": 44,
-  "divarIdx": 17,
-  "aparatIdx": 7,
+  "baladIdx": 369,
+  "chapshooIdx": 68,
+  "divarIdx": 3,
+  "aparatIdx": 3,
   "baladRecQueue": [],
   "checkedKeys": [
     "divar:galOJ6E4",
@@ -2203,7 +2203,25 @@
     "chapshoo:taha-machine",
     "chapshoo:kado-360",
     "divar:waJglsJZ",
-    "divar:gabf02k7"
+    "divar:gabf02k7",
+    "divar:waJoSsXf",
+    "chapshoo:roll-adhesive-label-printing",
+    "chapshoo:instant-label-printing",
+    "balad:1l82xDhAY5Xyyp",
+    "balad:PrHDm6jYSO5xql",
+    "balad:PdYVZNOWnSJbxY",
+    "balad:5LRMnGvdovJ6pT",
+    "balad:5HnNSrR7xfuXMw",
+    "balad:1CYTrL30KCpk3N",
+    "chapshoo:miad",
+    "chapshoo:neshaneh-print",
+    "balad:69HIEQECL1JCvd",
+    "chapshoo:azerang-digi-chap",
+    "chapshoo:vilkij-print",
+    "chapshoo:digital-printing-punk",
+    "chapshoo:vizitiran",
+    "chapshoo:lithography-printing-binding",
+    "chapshoo:lab-navid"
   ],
-  "updatedAt": "2026-11-27T20:20:56.897Z"
+  "updatedAt": "2026-11-27T22:42:16.800Z"
 }
