@@ -1,8 +1,8 @@
 {
-  "baladIdx": 333,
-  "chapshooIdx": 20,
-  "divarIdx": 11,
-  "aparatIdx": 1,
+  "baladIdx": 351,
+  "chapshooIdx": 44,
+  "divarIdx": 17,
+  "aparatIdx": 7,
   "baladRecQueue": [],
   "checkedKeys": [
     "divar:galOJ6E4",
@@ -2201,7 +2201,9 @@
     "chapshoo:c-print",
     "chapshoo:multi-layer-cardboard",
     "chapshoo:taha-machine",
-    "chapshoo:kado-360"
+    "chapshoo:kado-360",
+    "divar:waJglsJZ",
+    "divar:gabf02k7"
   ],
-  "updatedAt": "2026-11-27T13:53:45.280Z"
+  "updatedAt": "2026-11-27T20:20:56.897Z"
 }
