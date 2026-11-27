@@ -1,5 +1,21 @@
 [
   {
+    "cycleId": "CYCLE-0050",
+    "timestamp": "2026-11-27T13:53:45.285Z",
+    "isoTimestamp": "2026-11-27T13:53:45.285Z",
+    "targetCity": "ایران و ایران",
+    "sourcesChecked": [
+      "https://chapshoo.com/ad/tablo-chab-hanane/",
+      "https://chapshoo.com/ad/parcham-sazann/"
+    ],
+    "newLeadsAdded": 2,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (2 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0049",
     "timestamp": "2026-11-27T01:10:45.247Z",
     "isoTimestamp": "2026-11-27T01:10:45.247Z",
