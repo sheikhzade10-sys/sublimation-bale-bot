@@ -1,5 +1,23 @@
 [
   {
+    "cycleId": "CYCLE-0053",
+    "timestamp": "2026-11-28T07:46:06.968Z",
+    "isoTimestamp": "2026-11-28T07:46:06.968Z",
+    "targetCity": "منطقه شادآباد، بلوار الغدیر، چهل و پنج متری زرند، خیابان عزیزی، ۵۰متر مانده به انتهای خیابان عزیزی، دست چپ شهرک صنعتی وحدت، ا و قدس،آزادی،میدان آزادی،خ عالمی،خ گنج آبادی . پاساژ قائم پلاک ۷و۸ و قم، مبارک آباد، بلوار ولیعصر علیه السلام، بین کوچه ۱۹ و ۲۱ پلاک ۴۸۳ و قم، خیابان ارم، کوچه 16 (ارک) پلاک 13",
+    "sourcesChecked": [
+      "https://balad.ir/p/پرچم-ساحلی-ساحل-پرچم-tehran-nei-jannat-abad-shomali-78otJOkdVjMMYf",
+      "https://balad.ir/p/تولیدی-پرچم-رادوین-qods_printing-and-engraving-services-3b0WkYdD4b0FmJ",
+      "https://balad.ir/p/تولیدی-پرچم-و-کتیبه-قمر-qom_private-firm-6HqN1dVkwz6Ks8",
+      "https://balad.ir/p/تولیدی-پرچم-علی_cultural-goods-store-4kx5Fx6KApAwo1"
+    ],
+    "newLeadsAdded": 4,
+    "newProspectsAdded": 0,
+    "newSourcesAdded": 0,
+    "newCreativeIdea": "پایش زنده چندمنبعی با حافظه پایدار نشانگر: API مستقیم نقشه بلد (۶۴۸ جست‌وجوی شهری + پیشنهادهای مرتبط)، خزنده عمیق چاپشو (۱۱۰ صفحه)، API دیوار و API آپارات",
+    "limitations": "سهمیه حداقل ۲ کارت جدید در این نوبت تکمیل شد (4 کارت جدید ثبت و به بله ارسال شد).",
+    "nextStep": "توقف ۲ ساعته و شروع نوبت بعدی رأس ۲ ساعت آینده"
+  },
+  {
     "cycleId": "CYCLE-0052",
     "timestamp": "2026-11-28T03:34:26.840Z",
     "isoTimestamp": "2026-11-28T03:34:26.840Z",
